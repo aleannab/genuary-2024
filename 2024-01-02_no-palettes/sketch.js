@@ -28,6 +28,9 @@ function draw() {
   if (curTime - gGravitySwitchTime > 1000) {
     gGravitySwitchTime = curTime;
     gGravity = createVector(random(-1, 1), random(-1, 1), random(-1, 1));
+    for (let system of gSystems) {
+      system.updateGravity();
+    }
   }
 
   ambientLight(255);
@@ -37,21 +40,20 @@ function draw() {
 
     system.run(dt);
   }
-
-  console.log(getFrameRate());
 }
 
 class Particle {
-  constructor(position, directionY, mass) {
-    this.velocity = createVector(random(-1, 1), directionY, random(-1, 1)).mult(0.2);
+  constructor(position, directionY, mass, gravity) {
+    this.velocity = createVector(random(-1, 1), directionY, random(-1, 1)).mult(0.4);
 
     this.position = position.copy();
     this.lifespan = 1;
     this.mass = mass;
+    this.gravity = gravity;
   }
 
   update(dt) {
-    let netForce = p5.Vector.div(gGravity, this.mass);
+    let netForce = p5.Vector.div(this.gravity, this.mass);
     let acceleration = p5.Vector.mult(netForce, dt);
     this.velocity.add(acceleration);
     let dPos = p5.Vector.mult(this.velocity, dt).add(p5.Vector.mult(acceleration, 0.5 * dt * dt));
@@ -79,10 +81,11 @@ class ParticleSystem {
     this.hue = random(0, 360);
     this.mass = random(0, 100);
     this.directionY = random(-1, 1) * 0.25;
+    this.gravity = createVector(random(-1, 1), random(-1, 1), random(-1, 1));
   }
 
   addParticle() {
-    this.particles.push(new Particle(this.origin, this.directionY, this.mass));
+    this.particles.push(new Particle(this.origin, this.directionY, this.mass, this.gravity));
   }
 
   run(dt) {
@@ -102,5 +105,12 @@ class ParticleSystem {
       p.draw();
     }
     pop();
+  }
+
+  updateGravity() {
+    this.gravity = createVector(random(-1, 1), random(-1, 1), random(-1, 1));
+    for (let p of this.particles) {
+      p.gravity = this.gravity;
+    }
   }
 }
