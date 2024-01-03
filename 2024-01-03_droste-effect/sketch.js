@@ -1,34 +1,36 @@
-// Created for #Genuary2024 - Droste Effect
+// Created for #Genuary2024 - Day 3 - Droste Effect
+// https://genuary.art/prompts#jan3
 
 let gScaleVar = 0.9;
 
 function setup() {
-  let length = windowWidth < windowHeight ? windowWidth : windowHeight;
-  createCanvas(length, length, WEBGL);
-  //noLoop();
+  createCanvas(windowWidth, windowHeight, WEBGL);
   noStroke();
+  background(0);
 }
 
 function draw() {
-  background(255);
-  drawDroste(0, 0, height, 0, 50); // Adjust the number of iterations
+  drawDroste(0, 0, width, 0, 50);
 }
 
 function drawDroste(x, y, size, angle, level) {
   if (level > 0 && size > 1) {
     let half = size * 0.5;
     let quarter = size * 0.25;
-    let t = millis() * 0.001;
-    push();
-    rotateZ(angle);
     let adjX = x - half;
     let adjY = y - half;
+
+    let t = millis() * 0.001;
+
+    push();
+    rotateZ(angle);
+
     fill(0);
     rect(adjX, adjY, size, size);
 
     fill(255);
-    let small = 0.9 * size;
-    let offset = 0.1 * half;
+    let small = 0.91 * size;
+    let offset = 0.09 * half;
     rect(adjX + offset, adjY + offset, small, small);
 
     fill(0);
@@ -41,5 +43,3 @@ function drawDroste(x, y, size, angle, level) {
     drawDroste(x, y, new_size, new_angle, level - 1);
   }
 }
-
-function mouseClicked() {}
