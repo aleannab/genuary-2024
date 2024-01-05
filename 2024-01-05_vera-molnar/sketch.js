@@ -1,77 +1,96 @@
 // Created for the #Genuary2024 -Vera Molnar
+// https://genuary.art/prompts#jan5
 
-let gLineWidthMin = 1;
-let gLineWidthMax = 1;
+let gLineSpacing = 1.5;
+
 let gStrips = [];
-let gStripWidth = 100;
-let gStripLengthMax = 500;
-let gStripLengthMin = 200;
+let gStripWidth;
+let gStripLength;
 
-let gMargin = 50;
+let gMarginX;
+let gMarginY;
+let gBoundMinY;
+let gBoundMaxY;
 
-let gColor = '#483d51'; //'#7E6B8F';
-let gBgColor = '#7E6B8F'; //'#483d51';
+let gColor = '#1d643cb4';
+let gBgColor = '#d8d3cf';
 
 function setup() {
-  createCanvas(windowWidth, windowHeight);
+  if (windowWidth > windowHeight) {
+    createCanvas(1.5 * windowHeight, windowHeight);
+  } else {
+    createCanvas(windowWidth, windowWidth / 1.5);
+  }
+  strokeWeight(2);
 
-  gBoundMin = gMargin;
-  gBoundMax = height - gMargin - gStripLengthMax;
-  noStroke();
-  fill(gColor);
+  gMarginY = 0.1 * height;
+  gMarginX = 2 * gMarginY;
+  gStripLength = (height - 2 * gMarginY) * 0.6;
+  gStripWidth = 0.138 * gStripLength;
+
+  gBoundMinY = gMarginY;
+  gBoundMaxY = height - gMarginY - gStripLength;
 
   let isLeft = false;
-  let inBounds = true;
-  let boundX = width - gStripWidth - gMargin;
-  console.log(width + ' ' + boundX + ' ' + gStripWidth);
-  let x = gMargin;
-  while (inBounds) {
-    gStrips.push(new Strip(x, gStripWidth, isLeft));
-    gStrips.push(new Strip(x, gStripWidth, !isLeft));
-    x += gStripWidth * (1 + 0.5 * random(-1, 0));
-    isLeft = !isLeft;
+  let x = gMarginX;
+  let count = 1.2 * ceil((width - 2 * gMarginX) / gStripWidth);
 
-    if (x > boundX) {
-      break;
+  let stripWidthVar = 0.5 * gStripWidth;
+
+  for (let i = 0; i < count; i++) {
+    let countVert = 3;
+    for (let j = 0; j < countVert; j++) {
+      gStrips.push(new Strip(x + random(-1, 1) * stripWidthVar, isLeft));
     }
+
+    x += gStripWidth * random(0.8, 1.2);
+    isLeft = !isLeft;
   }
 }
-
-function mouseClicked() {}
 
 function draw() {
   background(gBgColor);
 
+  stroke(gColor);
   for (let strip of gStrips) {
     strip.update();
     strip.draw();
   }
+
+  fill(gBgColor);
+  noStroke();
+  rect(0, 0, gMarginX, height);
+  rect(width - gMarginX, 0, gMarginX, height);
+  console.log(frameRate());
 }
 
 class Strip {
-  constructor(x, wid, isLeft) {
-    let initX = x + random(-1, 1) * wid;
-    this.width = wid;
-    this.length = random(gStripLengthMin, gStripLengthMax);
-    let boundMaxY = height - gMargin - this.length;
-    let initY = random(gMargin, boundMaxY);
+  constructor(x, isLeft) {
+    let initX = x;
+    let boundMaxY = height - gMarginY - gStripLength;
+    let initY = random(gMarginY, boundMaxY);
     this.position = createVector(initX, initY);
-    this.hue = gColor;
-    this.lineWidth = random(gLineWidthMin, gLineWidthMax);
 
-    this.lineCount = this.length / (2 * this.lineWidth);
-    this.isTravelingUp = isLeft;
-    this.inc = (isLeft ? -1 : 1) * random(1, 4);
+    this.lineCount = gStripLength / gLineSpacing;
+    this.isTravelingLeft = isLeft;
+    this.inc = (isLeft ? -1 : 1) * random(0.5, 2);
 
-    this.initX = isLeft ? width : -this.wid;
+    this.initX = isLeft ? width : -gStripWidth;
 
     this.boundCheck = isLeft
       ? function () {
-          return this.position.x < -(this.width + this.lineWidth);
+          return this.position.x < gMarginX - gStripWidth;
         }
       : function () {
-          return this.position.x > width;
+          return this.position.x > width - gMarginX;
         };
+
+    this.yPositions = [];
+    let yp = this.position.y;
+    for (let i = 0; i < this.lineCount; i++) {
+      this.yPositions.push(yp);
+      yp += gLineSpacing;
+    }
   }
 
   update() {
@@ -83,18 +102,27 @@ class Strip {
   }
 
   createNewStrip() {
-    this.length = random(gStripLengthMin, gStripLengthMax);
-    this.lineWidth = random(gLineWidthMin, gLineWidthMax);
-    let newX = random(1, 2) * -this.lineWidth;
-    let newY = random(gMargin, height - gBoundMax - this.length);
+    this.lineCount = gStripLength / gLineSpacing;
+    let newX = this.isTravelingLeft ? width - gMarginX : gMarginX - gStripWidth;
+    let newY = random(gMarginY, height - gMarginY - gStripLength);
     this.position = createVector(newX, newY);
+
+    this.yPositions = [];
+    let yp = this.position.y;
+    for (let i = 0; i < this.lineCount; i++) {
+      this.yPositions.push(yp);
+      yp += gLineSpacing;
+    }
   }
 
   draw() {
-    let yp = this.position.y;
-    for (let i = 0; i < this.lineCount; i++) {
-      rect(this.position.x, yp, this.width, this.lineWidth);
-      yp += 2 * this.lineWidth;
+    let xPos = this.position.x;
+
+    beginShape(LINES);
+    for (let i = 0; i < this.yPositions.length; i += 2) {
+      vertex(xPos, this.yPositions[i]);
+      vertex(xPos + gStripWidth, this.yPositions[i]);
     }
+    endShape();
   }
 }
