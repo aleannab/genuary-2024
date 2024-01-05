@@ -5,12 +5,15 @@ let gLineSpacing = 1.5;
 
 let gStrips = [];
 let gStripWidth;
+let gStripPosVar;
 let gStripLength;
 
 let gMarginX;
 let gMarginY;
-let gBoundMinY;
-let gBoundMaxY;
+
+let gInitLevels = [];
+
+let gOffsetY;
 
 let gColor = '#1d643cb4';
 let gBgColor = '#d8d3cf';
@@ -21,29 +24,31 @@ function setup() {
   } else {
     createCanvas(windowWidth, windowWidth / 1.5);
   }
+
+  createCanvas(windowWidth, windowHeight);
   strokeWeight(2);
 
   gMarginY = 0.1 * height;
-  gMarginX = 2 * gMarginY;
+  gMarginX = 0.1 * width;
   gStripLength = (height - 2 * gMarginY) * 0.6;
   gStripWidth = 0.138 * gStripLength;
 
-  gBoundMinY = gMarginY;
-  gBoundMaxY = height - gMarginY - gStripLength;
+  gStripPosVar = 0.1 * gStripWidth;
+
+  let spaceTopStart = height - 2 * gMarginY - gStripLength;
+  let startInc = spaceTopStart / 3;
+  gInitLevels = [gMarginY, gMarginY + startInc, gMarginY + 2 * startInc, gMarginY + 3 * startInc];
 
   let isLeft = false;
   let x = gMarginX;
   let count = 1.2 * ceil((width - 2 * gMarginX) / gStripWidth);
 
-  let stripWidthVar = 0.5 * gStripWidth;
-
   for (let i = 0; i < count; i++) {
-    let countVert = 3;
-    for (let j = 0; j < countVert; j++) {
-      gStrips.push(new Strip(x + random(-1, 1) * stripWidthVar, isLeft));
+    for (let j = 0; j < 3; j++) {
+      gStrips.push(new Strip(x, isLeft, j));
+      isLeft = !isLeft;
     }
-
-    x += gStripWidth * random(0.8, 1.2);
+    x += gStripWidth * random(0.9, 1.1);
     isLeft = !isLeft;
   }
 }
@@ -65,17 +70,19 @@ function draw() {
 }
 
 class Strip {
-  constructor(x, isLeft) {
-    let initX = x;
-    let boundMaxY = height - gMarginY - gStripLength;
-    let initY = random(gMarginY, boundMaxY);
+  constructor(x, isLeft, level) {
+    let initX = x + random(-gStripPosVar, gStripPosVar);
+
+    this.boundMinY = gInitLevels[level];
+    this.boundMaxY = gInitLevels[level + 1];
+
+    let initY = random(this.boundMinY, this.boundMaxY);
     this.position = createVector(initX, initY);
 
     this.lineCount = gStripLength / gLineSpacing;
     this.isTravelingLeft = isLeft;
-    this.inc = (isLeft ? -1 : 1) * random(0.5, 2);
-
-    this.initX = isLeft ? width : -gStripWidth;
+    this.inc = (isLeft ? -1 : 1) * random(1, 3);
+    this.spawnX = this.isTravelingLeft ? width - gMarginX : gMarginX - gStripWidth;
 
     this.boundCheck = isLeft
       ? function () {
@@ -84,6 +91,8 @@ class Strip {
       : function () {
           return this.position.x > width - gMarginX;
         };
+
+    this.level = level;
 
     this.yPositions = [];
     let yp = this.position.y;
@@ -103,8 +112,8 @@ class Strip {
 
   createNewStrip() {
     this.lineCount = gStripLength / gLineSpacing;
-    let newX = this.isTravelingLeft ? width - gMarginX : gMarginX - gStripWidth;
-    let newY = random(gMarginY, height - gMarginY - gStripLength);
+    let newX = this.spawnX;
+    let newY = random(this.boundMinY, this.boundMaxY);
     this.position = createVector(newX, newY);
 
     this.yPositions = [];
