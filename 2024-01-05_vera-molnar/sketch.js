@@ -18,6 +18,12 @@ let gOffsetY;
 let gColor = '#1d643cb4';
 let gBgColor = '#d8d3cf';
 
+let gMainHue;
+let gHueVar = 20;
+let gSat = 60;
+let gBright = 70;
+let gAlpha = 0.7; //; //0.4;
+
 function setup() {
   if (windowWidth > windowHeight) {
     createCanvas(1.5 * windowHeight, windowHeight);
@@ -25,8 +31,10 @@ function setup() {
     createCanvas(windowWidth, windowWidth / 1.5);
   }
 
-  createCanvas(windowWidth, windowHeight);
+  colorMode(HSB);
   strokeWeight(2);
+
+  gMainHue = random(0, 360);
 
   gMarginY = 0.1 * height;
   gMarginX = 0.1 * width;
@@ -56,7 +64,7 @@ function setup() {
 function draw() {
   background(gBgColor);
 
-  stroke(gColor);
+  //stroke(gColor);
   for (let strip of gStrips) {
     strip.update();
     strip.draw();
@@ -66,7 +74,6 @@ function draw() {
   noStroke();
   rect(0, 0, gMarginX, height);
   rect(width - gMarginX, 0, gMarginX, height);
-  console.log(frameRate());
 }
 
 class Strip {
@@ -100,6 +107,7 @@ class Strip {
       this.yPositions.push(yp);
       yp += gLineSpacing;
     }
+    this.color = color((gMainHue + random(0, gHueVar)) % 360, gSat, gBright, gAlpha);
   }
 
   update() {
@@ -122,11 +130,13 @@ class Strip {
       this.yPositions.push(yp);
       yp += gLineSpacing;
     }
+
+    this.color = color((gMainHue + random(0, gHueVar)) % 360, gSat, gBright, gAlpha);
   }
 
   draw() {
     let xPos = this.position.x;
-
+    stroke(this.color);
     beginShape(LINES);
     for (let i = 0; i < this.yPositions.length; i += 2) {
       vertex(xPos, this.yPositions[i]);
