@@ -1,10 +1,14 @@
+// Created for #Genuary2024 - Day 4 - Pixel
+// https://genuary.art/prompts#jan4
+
 let gRowCount, gColCount;
-let gPixelSize = 50;
+let gPixelSize = 35;
 let gCurrentGen, gNextGen;
 let gIsRandMode = false;
 let gSameColor;
-let gRateMin = 1;
-let gRateMax = 5;
+let gSameColorBuffer;
+let gRateMin = 3;
+let gRateMax = 10;
 
 let gTimeoutActive = false;
 
@@ -21,12 +25,13 @@ function setup() {
   noStroke();
 
   gSameColor = random(0, 360);
+  gSameColorBuffer = random(20, 80);
 }
 
 function draw() {
   if (!gTimeoutActive) {
     for (let pixel of gCurrentGen) {
-      fill(pixel.curHue, 100, 100);
+      fill(pixel.curHue, 80, 100);
       rect(pixel.x, pixel.y, gPixelSize, gPixelSize);
     }
 
@@ -42,7 +47,7 @@ function draw() {
 
     if (allCloseEnough) {
       gTimeoutActive = true;
-      let waitTime = gIsRandMode ? 500 : 1000;
+      let waitTime = gIsRandMode ? 50 : 500;
       setTimeout(toggleMode, waitTime);
     }
 
@@ -57,7 +62,8 @@ function toggleMode() {
       pixel.update();
     }
   } else {
-    gSameColor = random(0, 360);
+    gSameColor = (gSameColor + random(30, 60)) % 360;
+    gSameColorBuffer = random(20, 80);
   }
 
   gTimeoutActive = false;
@@ -69,7 +75,7 @@ function updateColor(grid, x, y) {
   let target = gIsRandMode ? pixel.targetHue : gSameColor;
 
   let inc = (pixel.curHue > target ? -1 : 1) * pixel.rate;
-  let isCloseEnough = abs(pixel.curHue - target) < 15;
+  let isCloseEnough = abs(pixel.curHue - target) < (gIsRandMode ? 10 : gSameColorBuffer);
   if (!isCloseEnough) grid[index].curHue += inc;
   return isCloseEnough;
 }
