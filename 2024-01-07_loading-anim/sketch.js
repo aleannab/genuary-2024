@@ -9,44 +9,71 @@ let gDuration = 5000;
 let gDurationReset = 100;
 let gMillisStart;
 
-let gIsRestarting = false;
+let gIsLoading = true;
+
+let gHoldTime = 2000;
+let gClearX;
+
+let gBgColor = '#ffffff';
+let gPalette = ['#d9ead3', '#a2c4c9', '#6fa8dc', '#3d85c6', '#0b5394'];
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   colorMode(HSB);
-  strokeWeight(10);
   gMidY = 0.5 * height;
-  let count = 10;
-  let ampMin = 10;
-  let amp = count * ampMin;
-  let ampInc = amp / count;
-  for (let i = 0; i < count; i++) {
-    gLines.push(new Line(amp));
-    amp -= ampInc;
-  }
-  gMillisStart = millis();
+
+  startLoading();
 }
 
 function draw() {
-  background(255);
+  if (gIsLoading) {
+    background(gBgColor);
 
-  let t = millis() - gMillisStart;
+    let dt = millis() - gMillisStart;
 
-  let dur = gIsRestarting ? gDurationReset : gDuration;
-  let complete = sin(t / dur) + 1;
-  if (complete >= 2) gIsRestarting = !gIsRestarting;
+    let complete = min(dt / gDuration, 1);
+    if (complete === 1) {
+      gIsLoading = false;
+    }
 
-  for (let line of gLines) {
-    line.update(t * 0.01, complete);
-    line.draw();
+    for (let line of gLines) {
+      line.update(dt * 0.01, complete);
+      line.draw();
+    }
+  } else {
+    fill(gBgColor);
+    noStroke();
+    rect(-0.3 * width, 0, gClearX, height);
+    gClearX += 10;
+    if (gClearX > 1.3 * width) {
+      startLoading();
+    }
   }
+  console.log(frameRate());
+}
+
+function startLoading() {
+  strokeWeight(5);
+
+  gLines = [];
+  gClearX = 0;
+  let count = 10;
+  let ampMin = 20;
+  let amp = count * ampMin;
+  let ampInc = amp / count;
+  for (let i = 0; i < count; i++) {
+    gLines.push(new Line(amp, gPalette[i % gPalette.length]));
+    amp -= ampInc;
+  }
+  gMillisStart = millis();
+  gIsLoading = true;
 }
 
 class Line {
-  constructor(amp) {
+  constructor(amp, col) {
     this.points = [];
     let xp = 0;
-    let count = floor(random(5, 10));
+    let count = floor(random(10, 50));
     let inc = width / count;
     for (let i = 0; i < count + 1; i++) {
       this.points.push(new Point(xp, i === 0 || i === count, amp));
@@ -55,7 +82,7 @@ class Line {
 
     this.firstPoint = this.points[0];
     this.lastPoint = this.points[count];
-    this.color = color(random(0, 360), 100, 100);
+    this.color = col;
   }
 
   update(t, complete) {
@@ -79,16 +106,20 @@ class Line {
 
 class Point {
   constructor(xp, isStatic, amp) {
-    this.pos = createVector(xp, gMidY);
+    this.pos = createVector(0, gMidY);
+    this.endX = xp;
     this.amp = amp;
     this.offset = random(0, TWO_PI);
     this.isStatic = isStatic;
-    console.log(isStatic + ' ' + xp + ' ' + width);
   }
 
   update(t, complete) {
-    if (this.isStatic) return;
-    let curAmp = map(complete, 0, 1, this.amp, 0);
-    this.pos.y = gMidY + curAmp * sin(t + this.offset);
+    let curAmp = map(this.easeInOutSine(complete), 0, 1, this.amp, 0);
+    this.pos.x = this.endX * complete;
+    this.pos.y = gMidY + (this.isStatic ? 0 : curAmp * sin(t + this.offset));
+  }
+
+  easeInOutSine(t) {
+    return -(cos(PI * t) - 1) / 2;
   }
 }
