@@ -14,7 +14,6 @@ let gDrops = [];
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
-  colorMode(HSB);
   gRowCount = ceil(height / gCharSize);
   gColCount = ceil(width / gCharSize);
 
@@ -25,7 +24,7 @@ function setup() {
   for (let i = 0; i < gColCount; i++) {
     let column = [];
     for (let j = 0; j < gRowCount; j++) {
-      column.push(0);
+      column.push(new ASCIIPixel());
     }
     gASCII.push(column);
   }
@@ -38,7 +37,6 @@ function setup() {
       gDrops.push(new Drop(i, floor(random(0, gRowCount)), isVert, isNeg));
     }
   }
-
   fill(255);
 }
 
@@ -49,34 +47,34 @@ function getRandBool() {
 function update() {
   resetGrid();
   for (let drop of gDrops) {
-    drop.update();
-    let dropLength = drop.length;
     if (drop.isVert) {
-      let col = drop.col;
-      let charIndex = 0;
-      let rowStart = drop.row;
-      for (let i = 0; i < dropLength; i++) {
-        // check current box
-        let row = (rowStart + i) % gRowCount;
-        let current = gASCII[col][row];
-        let newIndex = current + charIndex;
-        if (newIndex > density.length) newIndex = density.length - 1;
-        gASCII[col][row] = newIndex;
-        charIndex++;
-      }
+      updateDrop(drop, true);
     } else {
-      let row = drop.row;
-      let charIndex = 0;
-      let colStart = drop.col;
-      for (let i = 0; i < dropLength; i++) {
-        // check current box
-        let col = (colStart + i) % gColCount;
-        let current = gASCII[col][row];
-        let newIndex = current + charIndex;
-        if (newIndex > density.length) newIndex = density.length - 1;
-        gASCII[col][row] = newIndex;
-        charIndex++;
-      }
+      updateDrop(drop, false);
+    }
+  }
+}
+
+function updateDrop(drop, isVertical) {
+  drop.update();
+  const dropLength = drop.length;
+  const dropColor = drop.color;
+
+  const startIndex = isVertical ? drop.row : drop.col;
+  const incrementIndex = isVertical ? gRowCount : gColCount;
+
+  for (let i = 0; i < dropLength; i++) {
+    let index = (startIndex + i) % incrementIndex;
+    let currentVal = isVertical ? gASCII[drop.col][index].value : gASCII[index][drop.row].value;
+    let newVal = currentVal + i;
+    newVal = newVal > density.length ? density.length - 1 : newVal;
+
+    if (isVertical) {
+      gASCII[drop.col][index].updateColor(dropColor);
+      gASCII[drop.col][index].value = newVal;
+    } else {
+      gASCII[index][drop.row].updateColor(dropColor);
+      gASCII[index][drop.row].value = newVal;
     }
   }
 }
@@ -84,7 +82,7 @@ function update() {
 function resetGrid() {
   for (let i = 0; i < gColCount; i++) {
     for (let j = 0; j < gRowCount; j++) {
-      gASCII[i][j] = 0;
+      gASCII[i][j].value = 0;
     }
   }
 }
@@ -95,7 +93,9 @@ function draw() {
   background(0);
   for (let i = 0; i < gColCount; i++) {
     for (let j = 0; j < gRowCount; j++) {
-      let index = gASCII[i][j];
+      let index = gASCII[i][j].value;
+      let color = gASCII[i][j].color;
+      fill(color);
       text(density.charAt(index), (i + 0.5) * gCharSize, (j + 0.5) * gCharSize);
     }
   }
@@ -105,6 +105,10 @@ class ASCIIPixel {
   constructor() {
     this.value = 0;
     this.color = color(0);
+  }
+
+  updateColor(mixColor) {
+    this.color = this.value === 0 ? mixColor : lerpColor(mixColor, this.color, 0.5);
   }
 }
 
@@ -116,6 +120,8 @@ class Drop {
     this.length = density.length;
     let speed = ceil(random(0, 3));
     this.v = isNeg ? -speed : speed;
+    this.hue = random(0, 360);
+    this.color = color(this.hue, 100, 100);
   }
 
   update() {
