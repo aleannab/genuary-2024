@@ -4,7 +4,7 @@
 const density = ' .:-=+*#%@';
 
 let gRowCount, gColCount;
-let gCharSize = 20; // Adjust the scale for ASCII character size
+let gCharSize = 15; // Adjust the scale for ASCII character size
 
 let gIncX, gIncY;
 
@@ -29,7 +29,7 @@ function setup() {
   }
 
   for (let i = 0; i < gColCount; i++) {
-    let dropCount = ceil(random(0, 4));
+    let dropCount = ceil(random(0, 10));
     for (let j = 0; j < dropCount; j++) {
       let isVert = getRandBool();
       let isNeg = getRandBool();
@@ -70,10 +70,10 @@ function updateDrop(drop, isVertical) {
     newVal = newVal > density.length ? density.length - 1 : newVal;
 
     if (isVertical) {
-      gASCII[drop.col][index].updateColor(dropColor);
+      gASCII[drop.col][index].updateColor(dropColor, currentVal / newVal);
       gASCII[drop.col][index].value = newVal;
     } else {
-      gASCII[index][drop.row].updateColor(dropColor);
+      gASCII[index][drop.row].updateColor(dropColor, currentVal / newVal);
       gASCII[index][drop.row].value = newVal;
     }
   }
@@ -107,8 +107,8 @@ class ASCIIPixel {
     this.color = color(0);
   }
 
-  updateColor(mixColor) {
-    this.color = this.value === 0 ? mixColor : lerpColor(mixColor, this.color, 0.5);
+  updateColor(mixColor, amount) {
+    this.color = this.value === 0 ? mixColor : lerpColor(this.color, mixColor, amount);
   }
 }
 
@@ -117,7 +117,7 @@ class Drop {
     this.col = col;
     this.row = row;
     this.isVert = isVert;
-    this.length = density.length;
+    this.length = floor(random(0, density.length));
     let speed = ceil(random(0, 2));
     this.dir = isNeg ? -1 : 1;
     this.v = this.dir * speed;
