@@ -1,7 +1,6 @@
 // Created for the #Genuary2024 - Day 9 - ASCII
 // https://genuary.art/prompts#jan9
 
-//const density = '@%#*+=-:. ';
 const density = ' .:-=+*#%@';
 
 let gRowCount, gColCount;
@@ -30,7 +29,7 @@ function setup() {
   }
 
   for (let i = 0; i < gColCount; i++) {
-    let dropCount = ceil(random(0, 5));
+    let dropCount = ceil(random(0, 4));
     for (let j = 0; j < dropCount; j++) {
       let isVert = getRandBool();
       let isNeg = getRandBool();
@@ -64,7 +63,8 @@ function updateDrop(drop, isVertical) {
   const incrementIndex = isVertical ? gRowCount : gColCount;
 
   for (let i = 0; i < dropLength; i++) {
-    let index = (startIndex + i) % incrementIndex;
+    let index = (startIndex + drop.dir * i) % incrementIndex;
+    if (index < 0) index = isVertical ? gRowCount + index : gColCount + index;
     let currentVal = isVertical ? gASCII[drop.col][index].value : gASCII[index][drop.row].value;
     let newVal = currentVal + i;
     newVal = newVal > density.length ? density.length - 1 : newVal;
@@ -118,8 +118,9 @@ class Drop {
     this.row = row;
     this.isVert = isVert;
     this.length = density.length;
-    let speed = ceil(random(0, 3));
-    this.v = isNeg ? -speed : speed;
+    let speed = ceil(random(0, 2));
+    this.dir = isNeg ? -1 : 1;
+    this.v = this.dir * speed;
     this.hue = random(0, 360);
     this.color = color(this.hue, 100, 100);
   }
