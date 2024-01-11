@@ -4,18 +4,18 @@
 let gHexagons = [];
 let gColCount, gRowCount;
 let gOffsetX, gOffsetY;
-const gHexSize = 100;
+const gHexSize = 50;
 let xOffset, yOffset;
 let gLastTime;
 let gTransformTime = 150;
 
-let gColorPalette = ['#ffc800', '#0019FF', '#FF005E', '#ffffff'];
-let gAlpha = 0.33;
-let gStrokeWeight = 20;
+let gColorPalette = ['#ffc800', '#0019FF', '#FF005E', '#00D69D'];
+let gAlpha = 0.3;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   colorMode(RGB);
+  noStroke();
 
   gColCount = ceil(width / gHexSize);
   gRowCount = ceil(height / gHexSize);
@@ -24,7 +24,6 @@ function setup() {
   gOffsetY = sqrt(3) * gHexSize;
 
   for (let i = 0; i < gRowCount; i++) {
-    let rows = [];
     for (let j = 0; j < gColCount; j++) {
       let x = j * gOffsetX;
       let y = i * gOffsetY;
@@ -32,13 +31,11 @@ function setup() {
         y += gOffsetY / 2;
       }
       let newHex = new Hexagon(x, y, gHexSize);
-      rows.push(newHex);
+      gHexagons.push(newHex);
     }
-    gHexagons.push(rows);
   }
   gLastTime = millis();
 
-  strokeWeight(gStrokeWeight);
   let adjColors = [];
   for (let c of gColorPalette) {
     let col = color(c);
@@ -48,10 +45,8 @@ function setup() {
 }
 
 function update(dt) {
-  for (let row of gHexagons) {
-    for (let hex of row) {
-      hex.update(dt);
-    }
+  for (let hex of gHexagons) {
+    hex.update(dt);
   }
 }
 
@@ -63,24 +58,8 @@ function draw() {
   gLastTime = curTime;
 
   update(dt);
-
-  for (let row of gHexagons) {
-    for (let hex of row) {
-      hex.draw(true);
-    }
-  }
-  for (let row of gHexagons) {
-    for (let hex of row) {
-      hex.draw(false);
-    }
-  }
-}
-
-function drawHexes(isFill) {
-  for (let row of gHexagons) {
-    for (let hex of row) {
-      hex.draw(isFill);
-    }
+  for (let hex of gHexagons) {
+    hex.draw();
   }
 }
 
@@ -92,12 +71,12 @@ class Hexagon {
     let c = random(gColorPalette); //(random(0, 360), 100, 100, 0.5);
     this.color = color(red(c), green(c), blue(c), gAlpha * 255);
     this.angle = 0; //random(0, PI / 3);
-    this.scale = 1; //random(1, 2);
-    this.targetScaleMax = ceil(random(0, 4)) * 1; //random(1.5, 2); //random(1.0, 2.0);
-    this.targetScaleMin = 1; //random(0.5, 1.0);
+    this.scale = 2; //random(1, 2);
+    this.targetScaleMax = ceil(random(1, 4)); //random(1.5, 2); //random(1.0, 2.0);
+    this.targetScaleMin = 2; //random(0.5, 1.0);
 
-    this.angularVel = PI / gTransformTime; //random(0, PI / 32); // Rotate by 30 degrees (π/6 radians) per second
-    this.growRate = (this.targetScaleMax - this.targetScaleMin) / gTransformTime; //0.005; // Adjust this rate based on your preference
+    this.angularVel = PI / gTransformTime; //random(0, PI / 32);
+    this.growRate = (this.targetScaleMax - this.targetScaleMin) / gTransformTime;
 
     this.isGrowing = true;
   }
@@ -111,18 +90,13 @@ class Hexagon {
     this.angle = this.angle + this.angularVel * dt;
   }
 
-  draw(isFill) {
+  draw() {
     push();
     translate(this.x, this.y);
     rotate(this.angle);
 
-    if (isFill) {
-      fill(this.color);
-      noStroke();
-    } else {
-      noFill();
-      stroke(0);
-    }
+    fill(this.color);
+    noStroke();
 
     beginShape();
     for (let i = 0; i < 6; i++) {
