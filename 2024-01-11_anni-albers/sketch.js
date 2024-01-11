@@ -5,23 +5,26 @@ let gBgSections = [];
 let gStripeWidth = 5;
 let gStripeCount;
 
+let gColorPalette = ['#342417', '#6f5754', '#be7775', '#cc471f'];
+let gBgColor = '#cea996';
+
 function setup() {
   createCanvas(windowWidth, windowHeight);
 
-  gStripeCount = ceil(windowWidth / (gStripeWidth * 2 + 1));
-  gStripeWidth = windowWidth / gStripeCount;
+  gStripeCount = ceil(windowWidth / (gStripeWidth * 2));
+  gStripeWidth = windowWidth / (gStripeCount + 1);
   createBackground();
 
   noStroke();
 }
 
 function createBackground() {
-  let avgHeight = height / 6;
+  let avgHeight = height / 7;
   let minHeight = 0.8 * avgHeight;
   let maxHeight = 1.2 * avgHeight;
 
   let yp = random(minHeight, maxHeight);
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 5; i++) {
     let sectHeight = random(minHeight, maxHeight);
     gBgSections.push(new Section(yp, sectHeight));
 
@@ -32,7 +35,7 @@ function createBackground() {
 function createParticles() {}
 
 function draw() {
-  background(255);
+  background(gBgColor);
   for (let sect of gBgSections) {
     sect.draw();
   }
@@ -42,7 +45,7 @@ class Section {
   constructor(yp, h) {
     this.yp = yp;
     this.h = h;
-    this.c = random(0, 200);
+    this.c = random(gColorPalette);
     this.stripes = [];
     let xp = 0;
     for (let i = 0; i < gStripeCount; i++) {
