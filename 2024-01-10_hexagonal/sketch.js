@@ -4,7 +4,7 @@
 let gHexagons = [];
 let gColCount, gRowCount;
 let gOffsetX, gOffsetY;
-const gHexSize = 50;
+const gHexSize = 80;
 let xOffset, yOffset;
 let gLastTime;
 let gTransformTime = 150;
@@ -54,7 +54,7 @@ function draw() {
   background(255);
 
   let curTime = millis();
-  let dt = 0.01 * (curTime - gLastTime);
+  let dt = 0.02 * (curTime - gLastTime);
   gLastTime = curTime;
 
   update(dt);
@@ -71,9 +71,9 @@ class Hexagon {
     let c = random(gColorPalette); //(random(0, 360), 100, 100, 0.5);
     this.color = color(red(c), green(c), blue(c), gAlpha * 255);
     this.angle = 0; //random(0, PI / 3);
-    this.scale = 2; //random(1, 2);
+    this.scale = 1.5; //random(1, 2);
     this.targetScaleMax = ceil(random(1, 4)); //random(1.5, 2); //random(1.0, 2.0);
-    this.targetScaleMin = 2; //random(0.5, 1.0);
+    this.targetScaleMin = 1.5; //random(0.5, 1.0);
 
     this.angularVel = PI / gTransformTime; //random(0, PI / 32);
     this.growRate = (this.targetScaleMax - this.targetScaleMin) / gTransformTime;
@@ -88,6 +88,9 @@ class Hexagon {
       this.isGrowing = !this.isGrowing;
     }
     this.angle = this.angle + this.angularVel * dt;
+    gAlpha = map(this.scale, this.targetScaleMin, this.targetScaleMax, 0.4, 0.3);
+    let c = this.color;
+    this.color = color(red(c), green(c), blue(c), gAlpha * 255);
   }
 
   draw() {
