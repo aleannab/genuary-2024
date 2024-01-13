@@ -3,16 +3,19 @@
 
 let gBgSections = [];
 const gSectionCount = 5;
-let gStripeWidth = 5;
+let gStripeWidth = 10;
 let gStripeSpacing = 6;
 let gStripeInc;
 let gStripeCount;
 
-let gThreads = [];
+let gVertThreads = [];
+let gHorizThreads = [];
+let gVertThreadSpacing = 3;
+
 let gThreadSpacing = 3;
 
 let gKnots = [];
-let gKnotRad;
+let gKnotRad = 6;
 
 let gColorPalette = ['#342417', '#6f5754', '#be7775', '#cc471f', '#b07d55'];
 let gBgColor = '#cea996';
@@ -20,12 +23,11 @@ let gThreadColor = '#a5876c';
 let gKnotPalette;
 
 function setup() {
-  createCanvas(windowWidth, windowHeight);
+  createCanvas(windowHeight * 0.6525, windowHeight);
 
-  gStripeCount = ceil((windowWidth + gStripeSpacing) / (gStripeWidth + gStripeSpacing));
-  gStripeWidth = (windowWidth + gStripeSpacing) / gStripeCount - gStripeSpacing;
+  gStripeCount = ceil((width + gStripeSpacing) / (gStripeWidth + gStripeSpacing));
+  gStripeWidth = (width + gStripeSpacing) / gStripeCount - gStripeSpacing;
   gStripeInc = gStripeWidth + gStripeSpacing;
-  gKnotRad = 1.2 * gStripeWidth;
 
   gKnotPalette = [...gColorPalette, gBgColor];
   createBackground();
@@ -38,18 +40,24 @@ function createBackground() {
   let minHeight = 0.8 * avgHeight;
   let maxHeight = 1.2 * avgHeight;
 
-  let threadCount = height / gThreadSpacing;
+  let threadCount = height / gVertThreadSpacing;
   let yp = 0;
   for (let i = 0; i < threadCount; i++) {
-    gThreads.push(yp);
-    yp += gThreadSpacing;
+    gVertThreads.push(yp);
+    yp += gVertThreadSpacing;
+  }
+
+  threadCount = (2 * width) / gStripeInc;
+  let xp = 0;
+  for (let i = 0; i < threadCount; i++) {
+    gHorizThreads.push(xp);
+    xp += i % 2 === 0 ? gStripeWidth : gStripeSpacing;
   }
 
   yp = random(minHeight, maxHeight);
   for (let i = 0; i < 5; i++) {
     let sectHeight = random(minHeight, maxHeight);
     gBgSections.push(new Section(yp, sectHeight));
-
     yp += sectHeight;
   }
 
@@ -64,8 +72,11 @@ function draw() {
   background(gBgColor);
 
   stroke(gThreadColor);
-  for (let t of gThreads) {
+  for (let t of gVertThreads) {
     line(0, t, width, t);
+  }
+  for (let t of gHorizThreads) {
+    line(t, 0, t, height);
   }
 
   for (let sect of gBgSections) {
