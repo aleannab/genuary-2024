@@ -4,26 +4,27 @@
 let gBgSections = [];
 const gSectionCount = 5;
 let gStripeWidth = 10;
-let gStripeSpacing = 6;
+let gStripeSpacing = 9;
 let gStripeInc;
 let gStripeCount;
 
 let gVertThreads = [];
 let gHorizThreads = [];
-let gVertThreadSpacing = 3;
+let gVertThreadSpacing = 5;
 
 let gThreadSpacing = 3;
 
-let gKnots = [];
-let gKnotRad = 6;
+let gKnotSections = [];
+let gKnotRad = 5;
 
 let gColorPalette = ['#342417', '#6f5754', '#be7775', '#cc471f', '#b07d55'];
-let gBgColor = '#cea996';
-let gThreadColor = '#a5876c';
+let gBgColor = '#d3b9a2';
+let gThreadColor = '#c9ae94';
 let gKnotPalette;
 
 function setup() {
-  createCanvas(windowHeight * 0.6525, windowHeight);
+  createCanvas(windowHeight * 0.5, windowHeight);
+  colorMode(HSB);
 
   gStripeCount = ceil((width + gStripeSpacing) / (gStripeWidth + gStripeSpacing));
   gStripeWidth = (width + gStripeSpacing) / gStripeCount - gStripeSpacing;
@@ -31,8 +32,6 @@ function setup() {
 
   gKnotPalette = [...gColorPalette, gBgColor];
   createBackground();
-
-  strokeWeight(0.5);
 }
 
 function createBackground() {
@@ -44,7 +43,7 @@ function createBackground() {
   let yp = 0;
   for (let i = 0; i < threadCount; i++) {
     gVertThreads.push(yp);
-    yp += gVertThreadSpacing;
+    yp += random(0.5, 1.5) * gVertThreadSpacing;
   }
 
   threadCount = (2 * width) / gStripeInc;
@@ -57,12 +56,16 @@ function createBackground() {
   yp = random(minHeight, maxHeight);
   for (let i = 0; i < 5; i++) {
     let sectHeight = random(minHeight, maxHeight);
-    gBgSections.push(new Section(yp, sectHeight));
+    gBgSections.push(new Section(yp, sectHeight, i === 0 || i === 4));
     yp += sectHeight;
   }
 
-  for (let i = 0; i < 500; i++) {
-    gKnots.push(new Knot());
+  let knotSectSpacing = width / 3;
+
+  xp = knotSectSpacing / 2;
+  for (let i = 0; i < 3; i++) {
+    gKnotSections.push(new KnotSection(xp));
+    xp += knotSectSpacing;
   }
 }
 
@@ -72,9 +75,11 @@ function draw() {
   background(gBgColor);
 
   stroke(gThreadColor);
+  strokeWeight(2);
   for (let t of gVertThreads) {
     line(0, t, width, t);
   }
+  strokeWeight(1);
   for (let t of gHorizThreads) {
     line(t, 0, t, height);
   }
@@ -84,16 +89,18 @@ function draw() {
   }
 
   noStroke();
-  for (let knot of gKnots) {
-    knot.draw();
+  for (let knotSect of gKnotSections) {
+    knotSect.draw();
   }
 }
 
 class Section {
-  constructor(yp, h) {
+  constructor(yp, h, topOrBottom) {
+    this.randSeed = yp * h;
     this.yp = yp;
     this.h = h;
-    this.c = random(gColorPalette);
+    this.c = topOrBottom ? gColorPalette[0] : gColorPalette[floor(random(1, gColorPalette.length))];
+    this.sCol = color(hue(this.c), saturation(this.c), 0.8 * brightness(this.c));
     this.stripes = [];
     this.threads = [];
     let xp = 0;
@@ -111,23 +118,72 @@ class Section {
   }
 
   draw() {
-    noStroke();
+    randomSeed(this.randSeed);
+
+    strokeWeight(1);
+    stroke(this.sCol);
     fill(this.c);
+    for (let t of this.threads) {
+      line(0, t, width, t);
+    }
     for (let s of this.stripes) {
-      rect(s, this.yp, gStripeWidth, this.h);
+      rect(s, this.yp + random(-2, 2), gStripeWidth, this.h);
     }
 
     stroke(gBgColor);
+    strokeWeight(0.5);
     for (let t of this.threads) {
       line(0, t, width, t);
     }
   }
 }
 
+class KnotSection {
+  constructor(xp) {
+    this.knots = [];
+    let yp = 0;
+    let yInc = gKnotRad; // * 0.75;
+    let numDots = height / yInc;
+    let mag = width / 10;
+    let gMargin = 0.05 * width; // 4 * gKnotRad;
+    for (let i = 0; i < numDots; i++) {
+      let offset = randomGaussian(mag * cos(0.01 * yp), 50);
+      let newX = constrain(xp + offset, gMargin, width - gMargin);
+      this.addKnot(newX, yp);
+      yp += yInc;
+    }
+  }
+
+  addKnot(xp, yp) {
+    let collision = false;
+
+    for (let existingKnot of this.knots) {
+      let d = dist(xp, yp, existingKnot.pos.x, existingKnot.pos.y);
+      if (d < gKnotRad * 2) {
+        collision = true;
+        break;
+      }
+    }
+
+    if (collision) {
+      this.addKnot(xp + random(-10, 10), yp + random(-10, 10));
+    } else {
+      this.knots.push(new Knot(xp, yp));
+    }
+  }
+
+  draw() {
+    for (let knot of this.knots) {
+      knot.draw();
+    }
+  }
+}
+
 class Knot {
-  constructor() {
-    this.c = random(gKnotPalette);
-    this.pos = createVector(random(0, width), random(0, height));
+  constructor(xp, yp) {
+    this.randSeed = xp * yp;
+    this.c = random(0, 1) > 0.7 ? gKnotPalette[0] : random(gKnotPalette);
+    this.pos = createVector(xp, yp);
     this.vertices = [];
     let offset = 0.5 * gKnotRad;
     let vCount = 5;
@@ -143,16 +199,18 @@ class Knot {
   }
 
   draw() {
-    //noStroke();
-    fill(this.c);
+    randomSeed(this.randSeed);
+    strokeWeight(4);
+    stroke(this.c);
+    noFill();
     push();
     translate(this.pos.x, this.pos.y);
-    //circle(0, 0, 20, 20);
-    beginShape();
-    for (let v of this.vertices) {
-      curveVertex(v.x, v.y);
+    for (let i = 0; i < 50; i++) {
+      stroke(hue(this.c), saturation(this.c) + random(-5, 5), brightness(this.c) + random(-10, 10));
+      let v0 = random(this.vertices);
+      let v1 = random(this.vertices);
+      line(v0.x, v0.y, v1.x, v1.y);
     }
-    endShape(CLOSE);
     pop();
   }
 }
