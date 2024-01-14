@@ -1,26 +1,20 @@
 // Created for the #Genuary2024 - In the style of Anni Albers (1899-1994).
 // https://genuary.art/prompts#jan11
+// Inspired by Anni Albers, Dotted, 1959
 
 let gBgSections = [];
-const gSectionCount = 5;
-let gStripeWidth = 10;
-let gStripeSpacing = 9;
+let gStripeWidth = 6;
+let gStripeSpacing = 7;
 let gStripeInc;
 let gStripeCount;
-
-let gVertThreads = [];
-let gHorizThreads = [];
-let gVertThreadSpacing = 5;
-
-let gThreadSpacing = 3;
+let gStitchInc = 5;
 
 let gKnotSections = [];
 let gKnotRad = 5;
 
 let gColorPalette = ['#342417', '#6f5754', '#be7775', '#cc471f', '#b07d55'];
 let gBgColor = '#d3b9a2';
-let gThreadColor = '#c9ae94';
-let gKnotPalette;
+let gKnotPalette = [...gColorPalette, gBgColor];
 
 function setup() {
   createCanvas(windowHeight * 0.5, windowHeight);
@@ -30,35 +24,23 @@ function setup() {
   gStripeWidth = (width + gStripeSpacing) / gStripeCount - gStripeSpacing;
   gStripeInc = gStripeWidth + gStripeSpacing;
 
-  gKnotPalette = [...gColorPalette, gBgColor];
   createBackground();
 }
 
 function createBackground() {
-  let avgHeight = height / 7;
+  let sectionCount = 7;
+  let avgHeight = height / sectionCount;
   let minHeight = 0.8 * avgHeight;
   let maxHeight = 1.2 * avgHeight;
 
-  let threadCount = height / gVertThreadSpacing;
   let yp = 0;
-  for (let i = 0; i < threadCount; i++) {
-    gVertThreads.push(yp);
-    yp += random(0.5, 1.5) * gVertThreadSpacing;
-  }
-
-  threadCount = (2 * width) / gStripeInc;
-  let xp = 0;
-  for (let i = 0; i < threadCount; i++) {
-    gHorizThreads.push(xp);
-    xp += i % 2 === 0 ? gStripeWidth : gStripeSpacing;
-  }
-
-  yp = random(minHeight, maxHeight);
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < sectionCount - 1; i++) {
     let sectHeight = random(minHeight, maxHeight);
-    gBgSections.push(new Section(yp, sectHeight, i === 0 || i === 4));
+    gBgSections.push(new Section(yp, sectHeight, i != 0, i === 1 || i === sectionCount - 2));
     yp += sectHeight;
   }
+
+  gBgSections.push(new Section(yp, height - yp));
 
   let knotSectSpacing = width / 3;
 
@@ -69,106 +51,90 @@ function createBackground() {
   }
 }
 
-function createParticles() {}
-
 function draw() {
   background(gBgColor);
 
-  stroke(gThreadColor);
-  strokeWeight(2);
-  for (let t of gVertThreads) {
-    line(0, t, width, t);
-  }
-  strokeWeight(1);
-  for (let t of gHorizThreads) {
-    line(t, 0, t, height);
-  }
-
+  noStroke();
   for (let sect of gBgSections) {
     sect.draw();
   }
 
-  noStroke();
   for (let knotSect of gKnotSections) {
     knotSect.draw();
   }
 }
 
 class Section {
-  constructor(yp, h, topOrBottom) {
+  constructor(yp, h, hasStripes, isDark = false) {
     this.randSeed = yp * h;
     this.yp = yp;
     this.h = h;
-    this.c = topOrBottom ? gColorPalette[0] : gColorPalette[floor(random(1, gColorPalette.length))];
-    this.sCol = color(hue(this.c), saturation(this.c), 0.8 * brightness(this.c));
-    this.stripes = [];
-    this.threads = [];
-    let xp = 0;
-    for (let i = 0; i < gStripeCount; i++) {
-      this.stripes.push(xp);
-      xp += gStripeInc;
-    }
-
-    let threadCount = h / gThreadSpacing;
-
-    for (let i = 0; i < threadCount; i++) {
-      this.threads.push(yp);
-      yp += gThreadSpacing;
+    this.c = isDark ? gColorPalette[0] : gColorPalette[floor(random(1, gColorPalette.length))];
+    this.rows = [];
+    let rowCount = ceil(h / gStitchInc);
+    let stitchHeight = h / rowCount;
+    for (let i = 0; i < rowCount; i++) {
+      this.rows.push(new Row(yp, this.c, stitchHeight, hasStripes));
+      yp += stitchHeight;
     }
   }
 
   draw() {
-    randomSeed(this.randSeed);
+    for (let r of this.rows) {
+      r.draw();
+    }
+  }
+}
 
-    strokeWeight(1);
-    stroke(this.sCol);
-    fill(this.c);
-    for (let t of this.threads) {
-      line(0, t, width, t);
-    }
-    for (let s of this.stripes) {
-      rect(s, this.yp + random(-2, 2), gStripeWidth, this.h);
-    }
+class Row {
+  constructor(yp, c, h, hasStripes) {
+    this.yp = yp;
+    this.stitches = [];
 
-    stroke(gBgColor);
-    strokeWeight(0.5);
-    for (let t of this.threads) {
-      line(0, t, width, t);
+    let threadCount = (2 * width) / gStripeInc;
+    let xp = 0;
+    for (let i = 0; i < threadCount; i++) {
+      let isEven = i % 2 === 0;
+      let w = isEven ? gStripeWidth : gStripeSpacing;
+      let stitchCol = hasStripes && isEven ? c : gBgColor;
+      this.stitches.push(new Stitch(createVector(xp, yp), w, h, stitchCol, isEven));
+      xp += w;
     }
+  }
+  draw() {
+    for (let s of this.stitches) {
+      s.draw();
+    }
+  }
+}
+
+class Stitch {
+  constructor(pos, w, h, c, isEven) {
+    this.pos = pos;
+    this.w = w;
+    this.h = h;
+    let bScalar = isEven ? 1.0 : 0.95;
+    this.color = color(hue(c), saturation(c) + random(-2, 2), bScalar * (brightness(c) + random(-2, 2)), 0.6);
+  }
+
+  draw() {
+    fill(this.color);
+    rect(this.pos.x, this.pos.y, this.w, this.h + 5);
   }
 }
 
 class KnotSection {
   constructor(xp) {
     this.knots = [];
-    let yp = 0;
-    let yInc = gKnotRad; // * 0.75;
-    let numDots = height / yInc;
-    let mag = width / 10;
+    let yp = 0.05 * height;
+    let yInc = gKnotRad * 2; //0.75;
+    let numDots = (0.9 * height) / yInc;
     let gMargin = 0.05 * width; // 4 * gKnotRad;
     for (let i = 0; i < numDots; i++) {
-      let offset = randomGaussian(mag * cos(0.01 * yp), 50);
-      let newX = constrain(xp + offset, gMargin, width - gMargin);
-      this.addKnot(newX, yp);
+      let offset = randomGaussian(cos(0.01 * yp), 30);
+      let newX = constrain(xp + offset, gMargin + random(0, 20), width - (gMargin + random(0, 20)));
+      this.knots.push(new Knot(newX, yp));
       yp += yInc;
-    }
-  }
-
-  addKnot(xp, yp) {
-    let collision = false;
-
-    for (let existingKnot of this.knots) {
-      let d = dist(xp, yp, existingKnot.pos.x, existingKnot.pos.y);
-      if (d < gKnotRad * 2) {
-        collision = true;
-        break;
-      }
-    }
-
-    if (collision) {
-      this.addKnot(xp + random(-10, 10), yp + random(-10, 10));
-    } else {
-      this.knots.push(new Knot(xp, yp));
     }
   }
 
