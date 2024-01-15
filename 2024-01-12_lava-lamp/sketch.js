@@ -29,8 +29,9 @@ function draw() {
 class Lava {
   constructor(per) {
     this.weight = map(per, 0, 1, 1, 6);
-    let hue = (gHue + 50 * per) % 360;
-    this.color = color(hue, 100, map(per, 0, 1, 50, 100));
+    this.hue = (gHue + 50 * per) % 360;
+    this.brightness = map(per, 0, 1, 50, 100);
+    this.color = color(this.hue, 100, this.brightness);
     this.cols;
     this.rows;
     this.size = 15;
@@ -56,7 +57,13 @@ class Lava {
     }
   }
 
+  updateColor() {
+    this.hue = (this.hue + 0.25) % 360;
+    this.color = color(this.hue, 100, this.brightness);
+  }
+
   draw() {
+    this.updateColor();
     stroke(this.color);
     strokeWeight(this.weight);
     // Calculate values for each grid cell based on circle positions
