@@ -12,8 +12,8 @@ let gStitchInc = 5;
 let gKnotSections = [];
 let gKnotRad = 5;
 
-let gColorPalette = ['#342417', '#6f5754', '#be7775', '#cc471f', '#b07d55'];
-let gBgColor = '#d3b9a2';
+let gColorPalette = ['#342417', '#6f5754', '#be7775', '#cc471f', '#ceb273'];
+let gBgColor = '#fceed9';
 let gKnotPalette = [...gColorPalette, gBgColor];
 
 function setup() {
@@ -69,7 +69,7 @@ class Section {
     this.randSeed = yp * h;
     this.yp = yp;
     this.h = h;
-    this.c = isDark ? gColorPalette[0] : gColorPalette[floor(random(1, gColorPalette.length))];
+    this.c = random(gColorPalette); //isDark ? gColorPalette[0] : gColorPalette[floor(random(1, gColorPalette.length))];
     this.rows = [];
     let rowCount = ceil(h / gStitchInc);
     let stitchHeight = h / rowCount;
@@ -113,7 +113,7 @@ class Stitch {
     this.pos = pos;
     this.w = w;
     this.h = h;
-    let bScalar = isEven ? 1.0 : 0.95;
+    let bScalar = isEven ? 1.0 : 0.9;
     this.color = color(hue(c), saturation(c) + random(-2, 2), bScalar * (brightness(c) + random(-2, 2)), 0.6);
   }
 
@@ -127,12 +127,12 @@ class KnotSection {
   constructor(xp) {
     this.knots = [];
     let yp = 0.05 * height;
-    let yInc = gKnotRad * 2; //0.75;
+    let yInc = gKnotRad * 1.5; //0.75;
     let numDots = (0.9 * height) / yInc;
     let gMargin = 0.05 * width; // 4 * gKnotRad;
     for (let i = 0; i < numDots; i++) {
-      let offset = randomGaussian(cos(0.01 * yp), 30);
-      let newX = constrain(xp + offset, gMargin + random(0, 20), width - (gMargin + random(0, 20)));
+      let offset = randomGaussian(cos(0.01 * yp), 40);
+      let newX = constrain(xp + offset, gMargin + random(0, 30), width - (gMargin + random(0, 50)));
       this.knots.push(new Knot(newX, yp));
       yp += yInc;
     }
