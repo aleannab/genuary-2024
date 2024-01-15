@@ -9,7 +9,6 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   colorMode(HSB);
 
-  strokeWeight(0.5);
   gHue = random(0, 360);
 
   let count = 5;
@@ -29,11 +28,9 @@ function draw() {
 class Lava {
   constructor(per) {
     this.weight = map(per, 0, 1, 1, 6);
-    this.hue = (gHue + 50 * per) % 360;
+    this.hue = (gHue + 70 * per) % 360;
     this.brightness = map(per, 0, 1, 50, 100);
     this.color = color(this.hue, 100, this.brightness);
-    this.cols;
-    this.rows;
     this.size = 15;
     this.grid = [];
 
