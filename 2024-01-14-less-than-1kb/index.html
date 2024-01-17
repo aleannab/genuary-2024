@@ -1,11 +1,1 @@
-<html>
-  <head>
-    <style>
-      body {
-        margin: 0;
-      }
-    </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
-    <script>setup=(_)=>{createCanvas((W=windowWidth),(H=windowHeight));colorMode(HSB,8);h=random(9);P=[color(h,3,1),color(h,4,2),color(h,3,4),color(h,2,6),color(h,1,8)];T=0;A=random(1);B=random(1);};draw=(_)=>{T+=0.001;background(P[2]);for(let i=40;i>=0;i--){stroke(P[i%5]);x=W*noise(i*A+B*sin(A*W*i+B*T+A)**3);y=H*noise(i*i*A-A*T+B*sin(B*W*i+B*T)**3);z=i/40;strokeWeight(z*y+25);line(x,0,x,H);strokeWeight(z*x+25);line(0,y,W,y);}};</script>
-  </head>
-</html>
+<html><head><style>body{margin:0;}</style><script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script><script>setup=_=>{createCanvas(W=windowWidth,H=windowHeight);colorMode(HSB,8);h=random(9);P=[color(h,3,1),color(h,4,2),color(h,3,4),color(h,2,6),color(h,1,8)];T=0;A=random(1);};draw=_=>{T+=.001;background(P[2]);for(let i=40;i>=0;i--){stroke(P[i%5]);x=W*noise(i*A+A*sin(A*W*i+A*T+A)**3);y=H*noise(i*i*A-A*T+A*sin(A*W*i+A*T)**3);z=i/40;strokeWeight(z*y+25);line(x,0,x,H);strokeWeight(z*x+25);line(0,y,W,y);}};</script></head></html>
