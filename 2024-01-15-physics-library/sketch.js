@@ -1,4 +1,5 @@
-// #Genuary2024 - Day 15 - Use a physics library
+// #Genuary2024 - Combining Day 15 and Day 21 since I'm already behind
+// Use a physics library and Use a library that you haven’t used before.
 // https://genuary.art/prompts#jan15
 
 let Engine = Matter.Engine,
@@ -16,21 +17,22 @@ let gLines = [];
 let gAllLines = [];
 let gSpacing = 20;
 
-let gUnitSize = 12;
+let gUnitSize = 8;
 let gUnitMin = 5;
-let gUnitMax = 12;
+let gUnitMax = 40;
 let gNextUpdate;
 
 let gGravityDir;
-let gGravityScale = 0.7;
+let gGravityScale = 0.9;
 
-let gBgColor = '#ffffff';
+let gBgColor = '#000000';
 let gPalette = ['#636363', '#3b3b3b', '#222222', '#141414', '#000000'];
 
 function setup() {
   canvas = createCanvas(windowWidth, windowHeight);
   noFill();
   strokeWeight(1);
+  colorMode(RGB, 1);
 
   gEngine = Engine.create();
   gWorld = gEngine.world;
@@ -77,7 +79,7 @@ function addBlock(x, y, id) {
   let columns = int(random(gUnitMin, gUnitMax));
   let rows = 1;
   let softBody = createSoftBody(x, y, columns, rows, 0, 0, true, gUnitSize, particleOptions);
-  softBody.color = random(gPalette);
+  softBody.color = color(random(0.5, 1)); //0.8));
   softBody.size = { w: columns, h: rows };
   softBody.activeTs = frameCount;
 
@@ -108,7 +110,6 @@ function createSoftBody(xx, yy, columns, rows, columnGap, rowGap, crossBrace, pa
 function draw() {
   let cur = millis();
   if (cur > gNextUpdate) {
-    console.log(frameRate());
     gWorld.gravity.x = random(-1, 1) * gGravityScale; //0.4, 0.4);
     gWorld.gravity.y = random(-1, 1) * gGravityScale; //0.4, 0.4);
     gNextUpdate = cur + random(500, 2000);
@@ -123,22 +124,12 @@ function draw() {
       curveVertex(b.position.x, b.position.y);
     };
 
-    // top
     for (let i = 0; i < block.size.w; i++) {
       drawVertex(i, 0);
     }
-    // right
     for (let i = 0; i < block.size.h; i++) {
       drawVertex(block.size.w - 1, i);
     }
-    // bottom
-    for (let i = block.size.w - 1; i >= 0; i--) {
-      drawVertex(i, block.size.h - 1);
-    }
-    // left
-    for (let i = block.size.h - 1; i >= 0; i--) {
-      drawVertex(0, i);
-    }
-    endShape(CLOSE);
+    endShape();
   }
 }
