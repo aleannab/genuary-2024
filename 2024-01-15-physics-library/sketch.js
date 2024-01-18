@@ -14,32 +14,35 @@ let Engine = Matter.Engine,
 let gEngine;
 let gLines = [];
 let gAllLines = [];
-let gSpacing = 50;
+let gSpacing = 20;
 
-let gUnitSize = 8;
-let gUnitMin = 1;
-let gUnitMax = 10;
+let gUnitSize = 12;
+let gUnitMin = 5;
+let gUnitMax = 12;
 let gNextUpdate;
 
 let gGravityDir;
+let gGravityScale = 0.7;
 
-let gPalette = ['#60458a', '#f3e68e', '#27cae9', '#e0e2e2'];
+let gBgColor = '#ffffff';
+let gPalette = ['#636363', '#3b3b3b', '#222222', '#141414', '#000000'];
 
 function setup() {
   canvas = createCanvas(windowWidth, windowHeight);
-  //noStroke();
+  noFill();
+  strokeWeight(1);
 
   gEngine = Engine.create();
   gWorld = gEngine.world;
-  gWorld.gravity.y = 0.5;
+  gWorld.gravity.y = gGravityScale;
 
   let params = {
     isStatic: true,
   };
   const halfW = width / 2;
   const halfH = height / 2;
-  let ground = Bodies.rectangle(halfW, height + 50, width + 100, 100, params);
-  let wall1 = Bodies.rectangle(-50, halfH, 100, height, params);
+  let ground = Bodies.rectangle(halfW - 50, height + 50, width + 100, 100, params);
+  let wall1 = Bodies.rectangle(-50, halfH - 50, 100, height + 100, params);
   let wall2 = Bodies.rectangle(width + 50, halfH, 100, height, params);
   let top = Bodies.rectangle(halfW, -50, width, 100, params);
   World.add(gWorld, [ground, wall1, wall2, top]);
@@ -72,7 +75,7 @@ function addBlock(x, y, id) {
     mass: 100,
   };
   let columns = int(random(gUnitMin, gUnitMax));
-  let rows = 2;
+  let rows = 1;
   let softBody = createSoftBody(x, y, columns, rows, 0, 0, true, gUnitSize, particleOptions);
   softBody.color = random(gPalette);
   softBody.size = { w: columns, h: rows };
@@ -106,15 +109,14 @@ function draw() {
   let cur = millis();
   if (cur > gNextUpdate) {
     console.log(frameRate());
-    gWorld.gravity.x = random(-1, 1); //0.4, 0.4);
-    gWorld.gravity.y = random(-1, 1); //0.4, 0.4);
+    gWorld.gravity.x = random(-1, 1) * gGravityScale; //0.4, 0.4);
+    gWorld.gravity.y = random(-1, 1) * gGravityScale; //0.4, 0.4);
     gNextUpdate = cur + random(500, 2000);
   }
 
-  background(0);
+  background(gBgColor);
   for (let block of gAllLines) {
-    fill(block.color);
-    noStroke();
+    stroke(block.color);
     beginShape();
     let drawVertex = (i, o) => {
       let b = block.bodies[o * block.size.w + i];
