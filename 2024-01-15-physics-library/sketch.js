@@ -14,8 +14,11 @@ let Engine = Matter.Engine,
 let gEngine;
 let gLines = [];
 let gAllLines = [];
-let gLineCount = 30;
-let gLineWidth;
+let gSpacing = 50;
+
+let gUnitSize = 8;
+let gUnitMin = 1;
+let gUnitMax = 10;
 let gNextUpdate;
 
 let gGravityDir;
@@ -24,11 +27,11 @@ let gPalette = ['#60458a', '#f3e68e', '#27cae9', '#e0e2e2'];
 
 function setup() {
   canvas = createCanvas(windowWidth, windowHeight);
-  noStroke();
+  //noStroke();
 
   gEngine = Engine.create();
   gWorld = gEngine.world;
-  gWorld.gravity.y = 0.2;
+  gWorld.gravity.y = 0.5;
 
   let params = {
     isStatic: true,
@@ -41,9 +44,19 @@ function setup() {
   let top = Bodies.rectangle(halfW, -50, width, 100, params);
   World.add(gWorld, [ground, wall1, wall2, top]);
 
-  let yInc = height / (gLineCount + 2);
-  for (let i = 0; i < gLineCount; i++) {
-    addBlock(random(width / 2), i * yInc, i);
+  const colBuffer = 1.3 * gUnitMax * gUnitSize + gSpacing;
+  const colCount = int(width / colBuffer);
+
+  const rowBuffer = 1.3 * gUnitSize + gSpacing;
+  const rowCount = int(height / rowBuffer);
+
+  const yInc = height / rowCount;
+  const xInc = width / colCount;
+
+  for (let i = 0; i < colCount; i++) {
+    for (let j = 0; j < rowCount; j++) {
+      addBlock(i * xInc, j * yInc, i);
+    }
   }
   Matter.Runner.run(gEngine);
 
@@ -55,12 +68,13 @@ function addBlock(x, y, id) {
     friction: 0.05,
     frictionStatic: 0.2,
     density: 0.1,
-    render: { visible: true },
+    render: { visible: false },
+    mass: 100,
   };
-  let columns = int(random(10, 20));
+  let columns = int(random(gUnitMin, gUnitMax));
   let rows = 2;
-  let softBody = createSoftBody(x, y, columns, rows, 0, 0, true, 10, particleOptions);
-  softBody.color = gPalette[id % gPalette.length];
+  let softBody = createSoftBody(x, y, columns, rows, 0, 0, true, gUnitSize, particleOptions);
+  softBody.color = random(gPalette);
   softBody.size = { w: columns, h: rows };
   softBody.activeTs = frameCount;
 
@@ -73,8 +87,9 @@ function createSoftBody(xx, yy, columns, rows, columnGap, rowGap, crossBrace, pa
     Composites = Matter.Composites,
     Bodies = Matter.Bodies;
 
+  // inertia: Infinity;
   particleOptions = Common.extend({ inertia: Infinity }, particleOptions);
-  constraintOptions = Common.extend({ stiffness: 0.2, render: { type: 'line', anchors: false } }, constraintOptions);
+  constraintOptions = Common.extend({ stiffness: 0.2, render: { type: 'line', anchors: false, lineWidth: 0 } }, constraintOptions);
 
   let softBody = Composites.stack(xx, yy, columns, rows, columnGap, rowGap, function (x, y) {
     return Bodies.circle(x, y, particleRadius, particleOptions);
@@ -90,18 +105,20 @@ function createSoftBody(xx, yy, columns, rows, columnGap, rowGap, crossBrace, pa
 function draw() {
   let cur = millis();
   if (cur > gNextUpdate) {
-    gWorld.gravity.x = random(-0.2, 0.2);
-    gWorld.gravity.y = random(-0.2, 0.2);
-    gNextUpdate = cur + 2000;
+    console.log(frameRate());
+    gWorld.gravity.x = random(-1, 1); //0.4, 0.4);
+    gWorld.gravity.y = random(-1, 1); //0.4, 0.4);
+    gNextUpdate = cur + random(500, 2000);
   }
 
   background(0);
   for (let block of gAllLines) {
     fill(block.color);
+    noStroke();
     beginShape();
     let drawVertex = (i, o) => {
       let b = block.bodies[o * block.size.w + i];
-      vertex(b.position.x, b.position.y);
+      curveVertex(b.position.x, b.position.y);
     };
 
     // top
