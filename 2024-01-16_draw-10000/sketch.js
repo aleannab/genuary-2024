@@ -3,38 +3,44 @@
 
 let gUnit;
 let gSquareUnit;
-let gSquares = [];
+let gTiles = [];
 let gSideCount = 13;
 
 // sm square: 4 triangles
 // md square: 16 triangles
 // lg square: 64 triangles
-//
-// total square: 169 lg squares
-// total square: 10 816 triangles
-//
-// 10 000 triangles = 625 md squares
-// 816 triangles = 51 md squares
-///
 
 let gPalette = ['#e5b061', '#d17746', '#68516a', '#384979', '#6c7ea6', '#b8bbbc'];
 let gSquarePalette = [];
 function setup() {
-  createCanvas((l = min(windowWidth, windowHeight)), l, WEBGL);
+  let isHShorter = windowHeight < windowWidth;
+  let w = isHShorter ? (13 * windowHeight) / 12.5 : windowWidth;
+  let h = isHShorter ? windowHeight : (13 * windowWidth) / 12.5;
+  createCanvas(w, h, WEBGL);
   noStroke();
 
   for (let i = 0; i < 16; i++) {
     gSquarePalette.push(random(gPalette));
   }
 
-  gUnit = width / (4 * gSideCount);
+  let l = isHShorter ? width : height;
+  gUnit = l / (4 * gSideCount);
   gSquareUnit = 4 * gUnit;
 
   let initX = -width / 2;
   let initY = -height / 2;
+
+  let missingSquares = Array(gSideCount * gSideCount).fill(true);
+  for (let i = 0; i < 51; i++) {
+    missingSquares[i] = false;
+  }
+
+  shuffle(missingSquares, true);
+
   for (let i = 0; i < gSideCount; i++) {
     for (let j = 0; j < gSideCount; j++) {
-      gSquares.push(new Square(initX + i * gSquareUnit, initY + j * gSquareUnit));
+      const isMissingSquare = false; //missingSquares[i * gSideCount + j];
+      gTiles.push(new Tile(initX + i * gSquareUnit, initY + j * gSquareUnit, isMissingSquare));
     }
   }
 }
@@ -42,30 +48,30 @@ function setup() {
 function draw() {
   background(100);
 
-  for (let s of gSquares) {
-    s.draw();
+  for (let t of gTiles) {
+    t.draw();
   }
 }
 
-class Square {
-  constructor(xp, yp) {
+class Tile {
+  constructor(xp, yp, isMissingSquare) {
     this.xp = xp + gUnit * 2;
     this.yp = yp + gUnit * 2;
-    this.triangles = [];
-    this.triangles.push(new Triangle());
+    this.largeSquare = new LargeSquare(isMissingSquare);
   }
+
   draw() {
     push();
     translate(this.xp, this.yp);
-    for (let tri of this.triangles) {
-      tri.draw();
-    }
+    this.largeSquare.draw();
     pop();
   }
 }
 
-class Triangle {
-  constructor() {
+class LargeSquare {
+  constructor(isMissingSquare) {
+    // one large square = 4 medium squares
+    // this array of triangles draws half a medium square = 8 triangles
     this.triangles = [
       [0, -2 * gUnit, gUnit, -2 * gUnit, gUnit, -gUnit],
       [0, -gUnit, gUnit, -gUnit, 0.5 * gUnit, -0.5 * gUnit],
@@ -76,12 +82,17 @@ class Triangle {
       [gUnit, -gUnit, gUnit, -2 * gUnit, 1.5 * gUnit, -1.5 * gUnit],
       [2 * gUnit, -2 * gUnit, gUnit, -2 * gUnit, 1.5 * gUnit, -1.5 * gUnit],
     ];
+    this.isMissingSquare = isMissingSquare;
+    this.missingSquare = this.isMissingSquare ? int(random(4)) : -1;
+    console.log(this.missingSquare);
   }
 
   draw() {
     push();
     let colIndex = 0;
+    // 64 total triangles = 4 * 2 * 8
     for (let i = 0; i < 4; i++) {
+      if (i === this.missingSquare) continue;
       push();
       rotate(HALF_PI * i);
       for (let j = 0; j < this.triangles.length; j++) {
