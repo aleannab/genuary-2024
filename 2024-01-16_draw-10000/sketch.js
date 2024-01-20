@@ -12,16 +12,20 @@ let gSideCount = 13;
 
 let gPalette = ['#e5b061', '#d17746', '#68516a', '#384979', '#6c7ea6', '#b8bbbc'];
 let gSquarePalette = [];
+let gBgColor;
 function setup() {
   let isHShorter = windowHeight < windowWidth;
   let w = isHShorter ? (13 * windowHeight) / 12.5 : windowWidth;
   let h = isHShorter ? windowHeight : (13 * windowWidth) / 12.5;
   createCanvas(w, h, WEBGL);
+  rectMode(CENTER);
   noStroke();
 
   for (let i = 0; i < 16; i++) {
-    gSquarePalette.push(random(gPalette));
+    gSquarePalette.push(random(gPalette)); //[idx]);
   }
+
+  gBgColor = random(gSquarePalette);
 
   let l = isHShorter ? width : height;
   gUnit = l / (4 * gSideCount);
@@ -30,34 +34,64 @@ function setup() {
   let initX = -width / 2;
   let initY = -height / 2;
 
-  let missingSquares = Array(gSideCount * gSideCount).fill(true);
-  for (let i = 0; i < 51; i++) {
-    missingSquares[i] = false;
-  }
-
-  shuffle(missingSquares, true);
-
   for (let i = 0; i < gSideCount; i++) {
     for (let j = 0; j < gSideCount; j++) {
-      const isMissingSquare = false; //missingSquares[i * gSideCount + j];
-      gTiles.push(new Tile(initX + i * gSquareUnit, initY + j * gSquareUnit, isMissingSquare));
+      gTiles.push(new Tile(initX + i * gSquareUnit, initY + j * gSquareUnit));
     }
   }
-}
 
-function draw() {
-  background(100);
+  background(255);
 
   for (let t of gTiles) {
     t.draw();
   }
+
+  drawCorners();
+}
+
+function drawCorners() {
+  fill(255);
+
+  const leftX = -width / 2;
+  const rightX = width / 2;
+  const topY = -height / 2;
+  const bottomY = height / 2;
+  const topLeft = { x: leftX, y: topY, z: 0 };
+  const topRight = { x: rightX, y: topY, z: 0 };
+  const bottomLeft = { x: leftX, y: bottomY, z: 0 };
+  const bottomRight = { x: rightX, y: bottomY, z: 0 };
+
+  drawBox(topLeft, true);
+  drawBox(topRight, false);
+  drawBox(bottomLeft, true);
+  drawBox(bottomRight, false);
+}
+
+function drawBox(position) {
+  const s = 1.5 * gSquareUnit;
+  const offset = (s + gUnit) / 2;
+  push();
+  translate(position.x, position.y, position.z);
+  const leftX = -offset;
+  const rightX = offset;
+  rect(0, 0, s);
+  rect(leftX, offset, gUnit);
+  rect(leftX, -offset, gUnit);
+  rect(rightX, offset, gUnit);
+  rect(rightX, -offset, gUnit);
+
+  rect(0, offset, 2 * gUnit, gUnit);
+  rect(0, -offset, 2 * gUnit, gUnit);
+  rect(rightX, 0, gUnit, 2 * gUnit);
+  rect(leftX, 0, gUnit, 2 * gUnit);
+  pop();
 }
 
 class Tile {
-  constructor(xp, yp, isMissingSquare) {
+  constructor(xp, yp) {
     this.xp = xp + gUnit * 2;
     this.yp = yp + gUnit * 2;
-    this.largeSquare = new LargeSquare(isMissingSquare);
+    this.largeSquare = new LargeSquare();
   }
 
   draw() {
@@ -69,7 +103,7 @@ class Tile {
 }
 
 class LargeSquare {
-  constructor(isMissingSquare) {
+  constructor() {
     // one large square = 4 medium squares
     // this array of triangles draws half a medium square = 8 triangles
     this.triangles = [
@@ -82,33 +116,42 @@ class LargeSquare {
       [gUnit, -gUnit, gUnit, -2 * gUnit, 1.5 * gUnit, -1.5 * gUnit],
       [2 * gUnit, -2 * gUnit, gUnit, -2 * gUnit, 1.5 * gUnit, -1.5 * gUnit],
     ];
-    this.isMissingSquare = isMissingSquare;
-    this.missingSquare = this.isMissingSquare ? int(random(4)) : -1;
-    console.log(this.missingSquare);
   }
 
   draw() {
     push();
-    let colIndex = 0;
     // 64 total triangles = 4 * 2 * 8
     for (let i = 0; i < 4; i++) {
-      if (i === this.missingSquare) continue;
+      let isEven = i % 2 === 0;
+      let colIndex = isEven ? 0 : 4 % gSquarePalette.length;
+      let inc = isEven ? 1 : -1;
+
       push();
       rotate(HALF_PI * i);
       for (let j = 0; j < this.triangles.length; j++) {
         this.drawTri(this.triangles[j], gSquarePalette[colIndex]);
-        colIndex = (colIndex + 1) % gSquarePalette.length;
+        colIndex = this.getNextColor(colIndex, inc);
       }
+
       push();
+      rotate(HALF_PI);
       scale(-1, 1);
       for (let j = 0; j < this.triangles.length; j++) {
         this.drawTri(this.triangles[j], gSquarePalette[colIndex]);
-        colIndex = (colIndex + 1) % gSquarePalette.length;
+        colIndex = this.getNextColor(colIndex, inc);
       }
       pop();
       pop();
     }
     pop();
+  }
+
+  getNextColor(i, inc) {
+    let next = i + inc;
+    if (next < 0) {
+      next = gSquarePalette.length + next;
+    }
+    return next % gSquarePalette.length;
   }
 
   drawTri(t, col) {
