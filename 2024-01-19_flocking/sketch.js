@@ -1,37 +1,68 @@
 // Created for the #Genuary2024 -
 // https://genuary.art/prompts#jan
 
-let gFlock;
-let gFlockSize = 300;
+let gFlocks = [];
+let gFlockCount = 3;
+let gFlockSize = 50;
 let gDesiredSeparation = 25;
 let gNeighborDist = 50;
 let gBuffer = 10;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
-  gFlock = new Flock();
-  background(255);
+  colorMode(HSB, 1);
+  noStroke();
+
+  for (let i = 0; i < gFlockCount; i++) {
+    gFlocks.push(new Flock());
+  }
+  background(0, 0, 1);
 }
 
 function mouseClicked() {}
 
 function draw() {
-  fill(255, 5);
-  noStroke();
-  rect(0, 0, width, height);
-  gFlock.run();
-  console.log(frameRate());
+  //background(0, 0, 1);
+  // fill(1, 0.5); //, 5);
+  // noStroke();
+  // rect(0, 0, width, height);
+  for (let flock of gFlocks) {
+    flock.run();
+  }
 }
 
 class Flock {
   constructor() {
+    this.col = color(random(), 1, 1, 0.05);
     this.boids = [];
+
+    let props = {
+      w: random(2, 20),
+      l: random(2, 20),
+      fMax: random(0.01, 1), //random(0.01, 0.05),
+      sMax: random(0.5, 3), //random(1, 3),
+      sep: random(0.5, 1), //random(1.5, 2),
+      ali: random(0.5, 1), //random(0.5, 0.7),
+      coh: random(0.2, 0.7), //random(0.5, 0.7),
+    };
+
+    console.log('sep: ' + props.sep);
+    console.log('ali: ' + props.ali);
+    console.log('coh: ' + props.coh);
+
+    // this.forceMax = 0.03;
+    // this.speedMax = 2;
+    // this.scalarS = 1.5;
+    // this.scalarA = 1;
+    // this.scalarC = 1;
+
     for (let i = 0; i < gFlockSize; i++) {
-      this.boids.push(new Boid());
+      this.boids.push(new Boid(props));
     }
   }
 
   run() {
+    fill(this.col);
     for (let b of this.boids) {
       b.run(this.boids);
       b.draw();
@@ -40,16 +71,17 @@ class Flock {
 }
 
 class Boid {
-  constructor() {
+  constructor(props) {
     this.pos = createVector(random(width), random(height));
     let angle = random(TWO_PI);
-    this.v = createVector(cos(angle), sin(angle));
-    this.r = 2; //random() * 30;
-    this.forceMax = 0.03;
-    this.speedMax = 2;
-    this.scalarS = 1.5;
-    this.scalarA = 1;
-    this.scalarC = 1;
+    this.vel = createVector(cos(angle), sin(angle));
+    this.width = props.w;
+    this.length = props.l;
+    this.forceMax = props.fMax;
+    this.speedMax = props.sMax;
+    this.scalarS = props.sep;
+    this.scalarA = props.ali;
+    this.scalarC = props.coh;
   }
 
   run(boids) {
@@ -70,9 +102,9 @@ class Boid {
     a.add(forceA);
     a.add(forceC);
 
-    this.v.add(a);
-    this.v.limit(this.speedMax);
-    this.pos.add(this.v);
+    this.vel.add(a);
+    this.vel.limit(this.speedMax);
+    this.pos.add(this.vel);
   }
 
   seek(target) {
@@ -80,7 +112,7 @@ class Boid {
     desired.normalize();
     desired.mult(this.speedMax);
 
-    let steer = p5.Vector.sub(desired, this.v);
+    let steer = p5.Vector.sub(desired, this.vel);
     steer.limit(this.forceMax);
     return steer;
   }
@@ -104,7 +136,7 @@ class Boid {
     if (steer.mag() > 0) {
       steer.normalize();
       steer.mult(this.speedMax);
-      steer.sub(this.v);
+      steer.sub(this.vel);
       steer.limit(this.forceMax);
     }
 
@@ -117,7 +149,7 @@ class Boid {
     for (let boid of boids) {
       let d = p5.Vector.dist(this.pos, boid.pos);
       if (d > 0 && d < gNeighborDist) {
-        sum.add(boid.v);
+        sum.add(boid.vel);
         count++;
       }
     }
@@ -126,7 +158,7 @@ class Boid {
       sum.div(count);
       sum.normalize();
       sum.mult(this.speedMax);
-      steer = p5.Vector.sub(sum, this.v);
+      steer = p5.Vector.sub(sum, this.vel);
       steer.limit(this.forceMax);
     }
     return steer;
@@ -149,18 +181,17 @@ class Boid {
   }
 
   draw() {
-    let theta = this.v.heading() + radians(HALF_PI);
-    fill(0);
-    stroke(0);
+    let theta = this.vel.heading() + HALF_PI;
 
     push();
     translate(this.pos.x, this.pos.y);
     rotate(theta);
     beginShape(TRIANGLES);
-    vertex(0, -this.r);
-    vertex(-this.r, this.r);
-    vertex(this.r, this.r);
+    vertex(0, -this.length);
+    vertex(-this.width, this.width);
+    vertex(this.width, this.width);
     endShape();
+
     pop();
   }
 
