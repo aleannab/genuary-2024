@@ -1,200 +1,234 @@
-// Created for the #Genuary2024 - Day 18/27 - Bahaus. Code for one hour. At the one hour mark, you're done.
-// https://genuary.art/prompts#jan
+// Created for the #Genuary2024 - Day 18 - Bauhaus.
+// https://genuary.art/prompts#jan18
+//
+// Inspired by Vasily Kandinsky's 𝘒𝘰𝘮𝘱𝘰𝘴𝘪𝘵𝘪𝘰𝘯 8, 1923
 
-let gPalette = ['#d3312a', '#d48a46', '#ebc649', '##717544', '#0a6ea2', '#894781'];
+let gPalette = ['#d3312a', '#d48a46', '#ebc649', '#0a6ea2', '#894781'];
 
 let gBgColor = '#f1ece4';
 
-let gScale = 0.05;
-let gScaleMax = 0.3;
+let gUnit;
 
-let gConstraints = {
-  lineMin: 0.005,
-  lineMax: 0.01,
-  circMin: 0.1,
-  circMax: 0.3,
-  arcMin: 0.05,
-  arcMax: 0.1,
-};
+let gSections = [];
+
 function setup() {
-  createCanvas(windowWidth, windowHeight);
+  let isWidthBigger = windowWidth > windowHeight;
+  let w = isWidthBigger ? 1.42 * windowHeight : windowWidth;
+  let h = isWidthBigger ? windowHeight : 0.7 * windowWidth;
+  createCanvas(0.9 * w, 0.9 * h);
   colorMode(HSB, 1);
   rectMode(CENTER);
-  frameRate(1);
+  let minL = min(w, h);
+  gUnit = minL / 3;
 
-  background(gBgColor);
-  strokeWeight(3);
-  // frameRate(1);
-  // drawCircle();
-  drawCheckers();
-  // drawArcs(0);
+  drawAll();
 }
 
-function draw() {
-  if (gScale > 0.5) return;
-  let randVal = floor(random(5));
-  switch (randVal) {
+function drawAll() {
+  background(gBgColor);
+  placeObjectsRandomly(5, 12, 1); //rects
+
+  placeObjectsRandomly(0, 5, 1.5); //grid
+  placeObjectsRadially(1, 13, 0.5); //circles
+
+  placeObjectsRadially(3, 7, 1); // line
+  placeObjectsRadially(1, 5, 0.8); //circles
+  placeObjectsRadially(4, 3, 0.5); //arcs
+}
+
+function mouseClicked() {
+  drawAll();
+}
+
+function drawElement(pos, type, scale) {
+  switch (type) {
     case 0:
-      drawLines();
+      drawGrid(pos, scale);
       break;
     case 1:
-      drawCircle();
+      drawCircle(pos, scale);
       break;
     case 2:
-      drawArcs();
+      drawAngle(pos, scale);
       break;
     case 3:
-      drawRect();
+      drawLine(pos, scale);
       break;
     case 4:
-      drawCheckers();
+      drawArcs(pos, scale);
+      break;
+    case 5:
+      drawRect(pos, scale);
       break;
   }
-  gScale += random(0.01, 0.05);
 }
 
-function drawLines() {
-  noFill();
-  setRandStroke();
-  push();
-  randTransform();
-  let length = random(0.2, 0.5) * width;
-
-  drawLine(length);
-  push();
-  translate(0, -random(0.05) * length);
-  randRotate(false, QUARTER_PI);
-
-  drawLine(length);
-  pop();
-  pop();
+function placeObjectsRadially(type, num, scale) {
+  let aInc = TWO_PI / num;
+  for (let i = 0; i < num; i++) {
+    let r = random(0.3, 0.4);
+    if (i % 2 === 0) r *= random(0.3, 0.5);
+    let x = cos(aInc * i + random()) * r * width + width / 2;
+    let y = sin(aInc * i + random()) * r * height + height / 2;
+    let pos = createVector(x, y);
+    drawElement(pos, type, random(0.8, 1.5) * scale);
+  }
 }
 
-function drawLine(length) {
-  line(0, 0, length, 0);
+function placeObjectsRandomly(type, num, scale) {
+  for (let i = 0; i < num; i++) {
+    let xp = random(0.2, 0.8) * width;
+    let yp = random(0.2, 0.8) * height;
+    let pos = createVector(xp, yp);
+    drawElement(pos, type, random(0.8, 1.5) * scale);
+  }
+}
+
+function drawLine(pos, scale) {
+  setRandStroke(1.5);
+  push();
+  translate(pos.x, pos.y);
+  randRotate(true);
+  let length = random(0.8, 1.2) * scale * gUnit;
+  line(-length / 2, 0, length / 2, 0);
   push();
   let perpLineCount = getRandBool() ? 1 : 2;
-  let perp = random(0.5, 0.9) * length;
+  let perp = random(-0.5, 0.3) * length;
   for (let i = 0; i < perpLineCount; i++) {
     line(perp, -20, perp, 20);
     perp += random(0.01, 0.08) * length;
   }
-
+  pop();
   pop();
 }
 
-function drawRect() {
+function drawRect(pos, scale) {
   getRandBool() ? fill(0) : setRandFill();
   push();
-  randTransform();
+  translate(pos.x, pos.y);
+  randRotate(false);
   noStroke();
-  let length = random(0.2, 0.5) * width;
-  let scale = map(gScale, 0, gScaleMax, gConstraints.lineMin, gConstraints.lineMax) * width;
-  rect(0, 0, length, scale);
-
-  // if (getRandBool()) {
-  //   if (getRandBool()) {
-  //     let num = floor(random(1, 4));
-  //     for (let i = 0; i < num; i++) {}
-  //   } else {
-
-  //   }
-  // }
+  let length = scale * random(0.25, 1) * gUnit;
+  let w = random(0.03, 0.05) * gUnit;
+  rect(0, 0, length, w);
   pop();
 }
 
-function drawCheckers() {
-  let d = map(gScale, 0, gScaleMax, 0.001, 0.05) * width;
+function drawGrid(pos, scale) {
+  push();
+  translate(pos.x, pos.y);
+  randRotate(false);
 
-  randTransform();
+  let iCount = floor(random(3, 4));
+  let jCount = floor(random(2, 5));
 
-  let iCount = floor(random(3, 6));
-  let jCount = floor(random(2, 8));
+  setRandStroke();
+
+  let inc = random(0.07, 0.08) * gUnit * scale;
+  let length = max(iCount, jCount) * inc * random(1, 3);
 
   for (let i = 0; i < iCount - 1; i++) {
     for (let j = 0; j < jCount - 1; j++) {
-      let xp = (i + 0.5) * d;
-      let yp = (j + 0.5) * d;
-
-      let col = random(gPalette);
-
-      fill(col);
-      noStroke();
-      rect(xp, yp, d, d);
+      let xp = (i + 0.5) * inc;
+      let yp = (j + 0.5) * inc;
+      fill(random(gPalette));
+      rect(xp, yp, inc, inc);
     }
   }
-  setRandStroke();
+  let vLength = random(0.5, 1) * length;
+  let vOffset = floor(random(iCount)) * inc;
   for (let i = 0; i < iCount; i++) {
-    let xp = i * d;
-    line(xp, 10 * d * random(0.5, 1.5), xp, -10 * d * random(0.5, 1.5));
+    let xp = i * inc;
+    let l = random(0.95, 1) * vLength;
+    stroke(0);
+    line(xp, -vOffset, xp, l - vOffset);
   }
 
-  for (let j = 0; j < jCount; j++) {
-    let yp = d * j;
-    line(10 * d * random(0.5, 1.5), yp, -10 * d * random(0.5, 1.5), yp);
+  let hLength = random(0.5, 1) * length;
+  let hOffset = floor(random(jCount)) * inc;
+  for (let i = 0; i < jCount; i++) {
+    let yp = i * inc + 0;
+    let l = random(0.95, 1) * hLength;
+    stroke(0);
+    line(-hOffset, yp, l + hOffset, yp);
   }
-}
 
-function drawCircle() {
-  if (getRandBool()) {
-    setRandStroke(20);
-  } else {
-    noStroke();
-  }
-  push();
-  randTransform();
-  let d = map(gScale, 0, gScaleMax, 0.01, 0.1) * width;
-  if (getRandBool()) {
-    noStroke();
-    let c = random(gPalette);
-    fill(hue(c), saturation(c), brightness(c), 0.5);
-    circle(0, 0, random(2, 3) * d);
-    fill(0);
-    circle(0, 0, random(1, 2) * d);
-  }
-  setRandFill();
-
-  circle(0, 0, d);
   pop();
 }
 
-function drawArcs(x = -1) {
+function drawCircle(pos, scale) {
   push();
-  randTransform();
+  translate(pos.x, pos.y);
+  let d = random(0.3, 0.5) * gUnit * scale;
+
+  let isTwo = getRandBool(0.5);
+  if (isTwo) {
+    let c = random(gPalette);
+    noStroke();
+    fill(hue(c), saturation(c), brightness(c), 0.5);
+  } else {
+    setRandStroke(10);
+    fill(random(gPalette));
+  }
+
+  circle(0, 0, d);
+  if (getRandBool(0.1)) {
+    let c = random(gPalette);
+    setRandStroke();
+    fill(random(gPalette));
+    circle(0, 0, random(0.3, 0.6) * d);
+  }
+  pop();
+}
+
+function drawArcs(pos, scale) {
+  push();
+  translate(pos.x, pos.y);
+  randRotate(true);
   setRandStroke();
   getRandBool() ? fill(1) : noFill();
 
-  let d = map(gScale, 0, 1, gConstraints.arcMin, gConstraints.arcMax) * width;
-  let numArcs = getRandBool() ? 1 : floor(random(3, 5));
-  let xp = 0;
-  for (let i = 0; i < numArcs; i++) {
-    arc(xp, 0, d, d, PI, TWO_PI, OPEN);
-    xp += d;
+  let d = random(0.2, 0.5) * scale * gUnit;
+  let numArcs = floor(random(3, 5));
+  if (getRandBool()) {
+    noFill();
+    for (let i = 0; i < numArcs; i++) {
+      let offset = 2 * d;
+      push();
+      translate(random(offset), random(offset));
+      arc(0, 0, d, d, PI, TWO_PI, OPEN);
+      pop();
+    }
+  } else {
+    let xp = 0;
+    for (let i = 0; i < numArcs; i++) {
+      arc(xp, 0, d, d, PI, TWO_PI, OPEN);
+      xp += d;
+    }
+
+    if (getRandBool()) {
+      let length = random(0.1) * width;
+      let r = d / 2;
+      line(-r - length, 0, xp - r + length, 0);
+    }
   }
 
-  if (getRandBool()) {
-    let length = random(0.1) * width;
-    let r = d / 2;
-    line(-r - length, 0, xp - r + length, 0);
-  }
   pop();
 }
 
-function randTransform() {
+function randTransform(isRight = false) {
   randTranslate();
-  randRotate(getRandBool(0.4));
+  randRotate(isRight);
 }
 
 function randTranslate() {
   let xp = random(0.2, 0.8) * width;
   let yp = random(0.2, 0.8) * height;
   translate(xp, yp);
-  console.log(width + ': ' + xp);
-  console.log(height + ': ' + yp);
 }
 
 function randRotate(isRight = true, max = TWO_PI) {
-  let angle = isRight ? floor(0, 4) * PI : random(max);
+  let angle = isRight ? floor(random(0, 4)) * HALF_PI : floor(random(0, 4)) * QUARTER_PI;
   rotate(angle);
 }
 
