@@ -2,13 +2,19 @@
 // https://genuary.art/prompts#jan
 
 let gFlocks = [];
-let gFlockCount = 5;
-let gFlockSize = 25;
+let gFlockCount = 20;
+let gFlockSize = 20;
 let gDesiredSeparation = 25;
-let gNeighborDist = 50;
+let gNeighborDist = 200;
 let gBuffer = 10;
 
 let gMainHue;
+
+let gPause = false;
+
+let gPalette = ['#a8d1e7', '#b3dbda', '#BCAFDB', '#B6CCE3', '#ADDBBC']; //, '#58837c', '#83a994', '#a0b6a9'];
+
+let gBgColor = '#fee6e0';
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -19,19 +25,22 @@ function setup() {
   for (let i = 0; i < gFlockCount; i++) {
     gFlocks.push(new Flock());
   }
-  background(0, 0, 1);
+  background(gBgColor);
 }
 
-function mouseClicked() {}
+function keyTyped() {
+  if (key === ' ') gPause = !gPause;
+}
 
 function draw() {
-  //background(0, 0, 1);
+  if (gPause) return;
   // fill(1, 0.5); //, 5);
   // noStroke();
   // rect(0, 0, width, height);
   for (let flock of gFlocks) {
     flock.run();
   }
+  console.log(frameRate());
 }
 
 class Flock {
@@ -40,13 +49,13 @@ class Flock {
     this.boids = [];
 
     let props = {
-      hue: (gMainHue + random(-0.2, 0.2)) % 1,
-      w: random(2, 20),
-      l: 2, //random(2, 20),
+      col: random(gPalette),
+      w: random(2, 25),
+      l: random(2, 50),
       fMax: random(0.01, 1), //random(0.01, 0.05),
-      sMax: random(1, 5), //random(1, 3),
-      sep: random(0.5, 1), //random(1.5, 2),
-      ali: random(0.5, 1), //random(0.5, 0.7),
+      sMax: random(4, 6), //random(1, 3),
+      sep: random(0.5, 2), //random(1.5, 2),
+      ali: random(0.5, 2), //random(0.5, 0.7),
       coh: random(0.2, 0.5), //random(0.5, 0.7),
     };
 
@@ -55,6 +64,8 @@ class Flock {
     // this.scalarS = 1.5;
     // this.scalarA = 1;
     // this.scalarC = 1;
+
+    let flockSize = random(0.5, 1) * gFlockSize;
 
     for (let i = 0; i < gFlockSize; i++) {
       this.boids.push(new Boid(props));
@@ -72,10 +83,14 @@ class Flock {
 
 class Boid {
   constructor(props) {
-    this.width = props.w;
+    this.width = props.w + random(5);
     this.length = props.l;
-    let alpha = map(this.width, 2, 20, 0.1, 0.05);
-    this.col = random() < 0.8 ? color(props.hue, random(0.5, 0.8), random(0.5, 0.8), alpha) : color(1, 0.025);
+    let alpha = map(this.width, 2, 20, 0.08, 0.05);
+    let c = color(props.col);
+    let h = (hue(c) + random(0.08)) % 1.0;
+    let s = (saturation(c) + random(0.08)) % 1.0;
+    let b = random(0.2, 1); //0.5; //this.clamp(brightness(c) + random(0.08), 0, 1);
+    this.col = random() < 0.8 ? color(h, s, b, alpha) : color(1, 0.025);
     this.pos = createVector(random(width), random(height));
     let angle = random(TWO_PI);
     this.vel = createVector(cos(angle), sin(angle));
@@ -203,5 +218,9 @@ class Boid {
     if (this.pos.y < -gBuffer) this.pos.y = height + gBuffer;
     if (this.pos.x > width + gBuffer) this.pos.x = -gBuffer;
     if (this.pos.y > height + gBuffer) this.pos.y = -gBuffer;
+  }
+
+  clamp(value, minRange, maxRange) {
+    return min(max(value, minRange), maxRange);
   }
 }
