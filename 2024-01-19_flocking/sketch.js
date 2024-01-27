@@ -2,16 +2,19 @@
 // https://genuary.art/prompts#jan
 
 let gFlocks = [];
-let gFlockCount = 3;
-let gFlockSize = 50;
+let gFlockCount = 5;
+let gFlockSize = 25;
 let gDesiredSeparation = 25;
 let gNeighborDist = 50;
 let gBuffer = 10;
+
+let gMainHue;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   colorMode(HSB, 1);
   noStroke();
+  gMainHue = random();
 
   for (let i = 0; i < gFlockCount; i++) {
     gFlocks.push(new Flock());
@@ -37,18 +40,15 @@ class Flock {
     this.boids = [];
 
     let props = {
+      hue: (gMainHue + random(-0.2, 0.2)) % 1,
       w: random(2, 20),
-      l: random(2, 20),
+      l: 2, //random(2, 20),
       fMax: random(0.01, 1), //random(0.01, 0.05),
-      sMax: random(0.5, 3), //random(1, 3),
+      sMax: random(1, 5), //random(1, 3),
       sep: random(0.5, 1), //random(1.5, 2),
       ali: random(0.5, 1), //random(0.5, 0.7),
-      coh: random(0.2, 0.7), //random(0.5, 0.7),
+      coh: random(0.2, 0.5), //random(0.5, 0.7),
     };
-
-    console.log('sep: ' + props.sep);
-    console.log('ali: ' + props.ali);
-    console.log('coh: ' + props.coh);
 
     // this.forceMax = 0.03;
     // this.speedMax = 2;
@@ -62,7 +62,7 @@ class Flock {
   }
 
   run() {
-    fill(this.col);
+    //fill(this.col);
     for (let b of this.boids) {
       b.run(this.boids);
       b.draw();
@@ -72,11 +72,13 @@ class Flock {
 
 class Boid {
   constructor(props) {
+    this.width = props.w;
+    this.length = props.l;
+    let alpha = map(this.width, 2, 20, 0.1, 0.05);
+    this.col = random() < 0.8 ? color(props.hue, random(0.5, 0.8), random(0.5, 0.8), alpha) : color(1, 0.025);
     this.pos = createVector(random(width), random(height));
     let angle = random(TWO_PI);
     this.vel = createVector(cos(angle), sin(angle));
-    this.width = props.w;
-    this.length = props.l;
     this.forceMax = props.fMax;
     this.speedMax = props.sMax;
     this.scalarS = props.sep;
@@ -186,6 +188,7 @@ class Boid {
     push();
     translate(this.pos.x, this.pos.y);
     rotate(theta);
+    fill(this.col);
     beginShape(TRIANGLES);
     vertex(0, -this.length);
     vertex(-this.width, this.width);
