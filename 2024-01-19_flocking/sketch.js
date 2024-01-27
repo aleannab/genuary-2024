@@ -1,5 +1,5 @@
-// Created for the #Genuary2024 -
-// https://genuary.art/prompts#jan
+// Created for the #Genuary2024 - Day 19 - Flocking
+// https://genuary.art/prompts#jan19
 
 let gFlocks = [];
 let gFlockCount = 20;
@@ -8,11 +8,11 @@ let gDesiredSeparation = 25;
 let gNeighborDist = 200;
 let gBuffer = 10;
 
-let gMainHue;
+let gHueShift;
 
 let gPause = false;
 
-let gPalette = ['#a8d1e7', '#b3dbda', '#BCAFDB', '#B6CCE3', '#ADDBBC']; //, '#58837c', '#83a994', '#a0b6a9'];
+let gPalette = ['#809bce', '#95b8d1', '#b8e0d2', '#d6eadf', '#eac4d5'];
 
 let gBgColor = '#fee6e0';
 
@@ -20,7 +20,11 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   colorMode(HSB, 1);
   noStroke();
-  gMainHue = random();
+  gHueShift = random();
+  let w0 = random(2, 30);
+  let w1 = random(20, 50);
+  gWidthMax = max(w0, w1);
+  gWidthMin = min(w0, w1);
 
   for (let i = 0; i < gFlockCount; i++) {
     gFlocks.push(new Flock());
@@ -34,13 +38,9 @@ function keyTyped() {
 
 function draw() {
   if (gPause) return;
-  // fill(1, 0.5); //, 5);
-  // noStroke();
-  // rect(0, 0, width, height);
   for (let flock of gFlocks) {
     flock.run();
   }
-  console.log(frameRate());
 }
 
 class Flock {
@@ -50,22 +50,14 @@ class Flock {
 
     let props = {
       col: random(gPalette),
-      w: random(2, 25),
+      w: random(gWidthMin, gWidthMax),
       l: random(2, 50),
-      fMax: random(0.01, 1), //random(0.01, 0.05),
-      sMax: random(4, 6), //random(1, 3),
-      sep: random(0.5, 2), //random(1.5, 2),
-      ali: random(0.5, 2), //random(0.5, 0.7),
-      coh: random(0.2, 0.5), //random(0.5, 0.7),
+      fMax: random(0.01, 1),
+      sMax: random(4, 6),
+      sep: random(0.5, 2),
+      ali: random(0.5, 2),
+      coh: random(0.2, 0.5),
     };
-
-    // this.forceMax = 0.03;
-    // this.speedMax = 2;
-    // this.scalarS = 1.5;
-    // this.scalarA = 1;
-    // this.scalarC = 1;
-
-    let flockSize = random(0.5, 1) * gFlockSize;
 
     for (let i = 0; i < gFlockSize; i++) {
       this.boids.push(new Boid(props));
@@ -73,7 +65,6 @@ class Flock {
   }
 
   run() {
-    //fill(this.col);
     for (let b of this.boids) {
       b.run(this.boids);
       b.draw();
@@ -85,12 +76,13 @@ class Boid {
   constructor(props) {
     this.width = props.w + random(5);
     this.length = props.l;
-    let alpha = map(this.width, 2, 20, 0.08, 0.05);
+    let alpha = map(props.w, gWidthMin, gWidthMax, 0.08, 0.05);
     let c = color(props.col);
-    let h = (hue(c) + random(0.08)) % 1.0;
+    let h = (hue(c) + gHueShift + random(0.08)) % 1.0;
     let s = (saturation(c) + random(0.08)) % 1.0;
-    let b = random(0.2, 1); //0.5; //this.clamp(brightness(c) + random(0.08), 0, 1);
+    let b = random() < 0.2 ? random(0.2, 0.5) : random(0.5, 1); //0.5; //this.clamp(brightness(c) + random(0.08), 0, 1);
     this.col = random() < 0.8 ? color(h, s, b, alpha) : color(1, 0.025);
+    // console.log(this.col);
     this.pos = createVector(random(width), random(height));
     let angle = random(TWO_PI);
     this.vel = createVector(cos(angle), sin(angle));
