@@ -10,7 +10,7 @@ let gBuffer = 10;
 
 let gHueShift;
 
-let gPause = false;
+let gPause = true;
 
 let gPalette = ['#809bce', '#95b8d1', '#b8e0d2', '#d6eadf', '#eac4d5'];
 
@@ -20,20 +20,36 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   colorMode(HSB, 1);
   noStroke();
-  gHueShift = random();
-  let w0 = random(2, 30);
+  gHueShift = -1;
+  makeNewFlock();
+}
+
+function mouseClicked() {
+  makeNewFlock();
+}
+
+function makeNewFlock() {
+  gHueShift = gHueShift < 0 ? 0 : gHueShift + random(0.2, 0.25);
+  let w0 = random(10, 30);
   let w1 = random(20, 50);
   gWidthMax = max(w0, w1);
   gWidthMin = min(w0, w1);
+  background(gBgColor);
 
+  gFlocks = [];
   for (let i = 0; i < gFlockCount; i++) {
     gFlocks.push(new Flock());
   }
-  background(gBgColor);
 }
 
 function keyTyped() {
   if (key === ' ') gPause = !gPause;
+  else if (key === 'c') background(gBgColor);
+  else if (key === 'n') {
+    background(gBgColor);
+    makeNewFlock();
+    gPause = false;
+  }
 }
 
 function draw() {
@@ -80,7 +96,7 @@ class Boid {
     let c = color(props.col);
     let h = (hue(c) + gHueShift + random(0.08)) % 1.0;
     let s = (saturation(c) + random(0.08)) % 1.0;
-    let b = random() < 0.2 ? random(0.2, 0.5) : random(0.5, 1); //0.5; //this.clamp(brightness(c) + random(0.08), 0, 1);
+    let b = random() < 0.25 ? random(0.2, 0.5) : random(0.5, 1); //0.5; //this.clamp(brightness(c) + random(0.08), 0, 1);
     this.col = random() < 0.8 ? color(h, s, b, alpha) : color(1, 0.025);
     // console.log(this.col);
     this.pos = createVector(random(width), random(height));
