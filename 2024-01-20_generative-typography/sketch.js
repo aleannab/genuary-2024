@@ -4,11 +4,13 @@
 let font;
 let word = 'GENUARY2024';
 let gTextSize = 200;
-let gStartX, gStartY;
+let gSpacingX = 100;
+let gSpacingY = gTextSize / 4;
 let gCharacters = [];
+let gBuffer = 100;
 
 function preload() {
-  font = loadFont('Roboto-Bold.ttf');
+  font = loadFont('RobotoMono-Bold.ttf');
 }
 
 function setup() {
@@ -18,21 +20,38 @@ function setup() {
   noFill();
   strokeWeight(0.5);
 
-  // Calculate text bounds once in setup
-  let textBounds = font.textBounds(word, 0, 0, gTextSize);
-  gStartX = 0; //textBounds.w; //(width - textBounds.w) / 2;
-  gStartY = textBounds.h; // (height + textBounds.h) / 2;
+  let bounds = font.textBounds(word, 0, 0, gTextSize);
 
-  let xp = 0;
-  let yp = textBounds.h;
+  if (bounds.w < width) {
+    let horizSpace = (width - bounds.w) / 2;
+    gBuffer = horizSpace;
+  } else {
+    let charBounds = font.textBounds(word.charAt(0), 0, 0, gTextSize);
+    gBuffer = charBounds.w / 2;
+  }
+
+  let initX = gBuffer;
+  let initY = bounds.h;
+  let xp = initX;
+  let yp = initY;
+  let numRows = 1;
   for (let i = 0; i < word.length; i++) {
     let letter = word.charAt(i);
-    gCharacters.push(new Character(letter, xp, yp));
-    xp += font.textBounds(letter, 0, 0, gTextSize).w + 10;
-    if (xp > width) {
-      xp = gStartX;
-      yp += gStartY;
+    let cWidth = font.textBounds(letter, 0, 0, gTextSize).w + gSpacingX;
+
+    if (xp + cWidth > width - gBuffer) {
+      xp = initX;
+      yp += bounds.h + gSpacingY;
+      numRows++;
     }
+    gCharacters.push(new Character(letter, xp, yp));
+    xp += gSpacingX; //cWidth + gSpacingX;
+  }
+
+  let vertSpace = (height - numRows * (bounds.h + gSpacingY) - gSpacingY) / 2;
+  for (let c of gCharacters) {
+    c.yp += vertSpace + 50;
+    c.xp += 130;
   }
 }
 
@@ -93,7 +112,7 @@ class Character {
           vertex(row[i].x, row[i].y);
           endShape();
         }
-        circle(row[i].x, row[i].y, 2);
+        //circle(row[i].x, row[i].y, 2);
       }
       endShape();
     }
