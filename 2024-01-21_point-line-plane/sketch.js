@@ -5,17 +5,19 @@ let path = [];
 let ellipses = [];
 let t = 0;
 
+let minX, maxX, minY, maxY;
+
 function setup() {
   let l = windowWidth > windowHeight ? windowHeight : windowWidth;
   createCanvas(0.9 * l, 0.9 * l);
 
   let marginX = 0.1 * width;
-  let minX = marginX;
-  let maxX = width - marginX;
+  minX = marginX;
+  maxX = width - marginX;
 
   let marginY = 0.2 * height;
-  let minY = marginY;
-  let maxY = height - marginY;
+  minY = marginY;
+  maxY = height - marginY;
 
   // Define a wavy bezier path
   let count = 50;
@@ -31,14 +33,16 @@ function setup() {
   path.push(createVector(maxX, minY));
 
   // Generate ellipses along the path
-  for (let i = 0; i <= 1; i += 0.0001) {
-    ellipses.push(getPointOnBezier(i, path));
+  let eCount = 3000;
+  let eInc = 1 / eCount;
+  for (let i = 0; i < eCount; i++) {
+    let pt = getPointOnBezier(i * eInc, path);
+    ellipses.push(pt);
   }
 }
 
 function draw() {
   randomSeed(0);
-
   background(255);
   noFill();
   stroke(0);
@@ -52,24 +56,23 @@ function draw() {
 
   // Draw ellipses along the path
   fill(0);
-  //noFill();
+  noFill();
   strokeWeight(2);
   noiseDetail(1, 0.25);
   beginShape();
   let sign = 1;
+  let zigZagVal = floor(random(0.25) * ellipses.length);
   for (let i = 0; i < ellipses.length; i++) {
     let xp = ellipses[i].x;
     let yp = ellipses[i].y;
-    let val = noise(0.02 * xp, 0.02 * yp);
-    let size = map(val, 0, 1, 0.1, 20);
-    let weight = map(val, 0, 1, 1, 10);
+    let val = noise(0.001 * xp, 0.01 * yp);
+    let weight = map(val, 0, 1, 1, 30);
     strokeWeight(weight);
-    ellipse(xp, yp, size, size);
+    point(xp, yp);
 
-    if (i % 50 === 0) {
-      continue;
-      if (i === 0 || random() > 0.7) continue;
-      let offset = sign * randomGaussian(50, 50);
+    if (i === zigZagVal) {
+      zigZagVal += floor(random(0.2) * ellipses.length);
+      let offset = sign * randomGaussian(75, 50);
       sign *= -1;
 
       // Calculate tangent at the current point
@@ -85,11 +88,15 @@ function draw() {
 
       // Create zig-zag point
       let zigZagPoint = createVector(xp, yp).add(perpendicular);
+      zigZagPoint.x = constrain(zigZagPoint.x, minX, maxX);
+      zigZagPoint.y = constrain(zigZagPoint.y, minY, maxY);
 
       vertex(zigZagPoint.x, zigZagPoint.y);
     }
   }
+  strokeWeight(1.5);
   endShape();
+  pop();
 }
 
 // Function to get a point on the wavy bezier path given a parameter t
