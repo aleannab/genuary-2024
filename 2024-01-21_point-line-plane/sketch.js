@@ -3,6 +3,7 @@
 
 let path = [];
 let ellipses = [];
+let zigZagPoints = [];
 let t = 0;
 
 let minX, maxX, minY, maxY;
@@ -10,6 +11,9 @@ let minX, maxX, minY, maxY;
 function setup() {
   let l = windowWidth > windowHeight ? windowHeight : windowWidth;
   createCanvas(0.9 * l, 0.9 * l);
+
+  noFill();
+  stroke(0);
 
   let marginX = 0.1 * width;
   minX = marginX;
@@ -39,6 +43,38 @@ function setup() {
     let pt = getPointOnBezier(i * eInc, path);
     ellipses.push(pt);
   }
+
+  // Calculate zigzag points
+  let zigZagIndex = floor(random(0.5) * ellipses.length);
+  let zigZagCount = 10;
+  let sign = 1;
+  for (let i = 0; i < zigZagCount; i++) {
+    if (zigZagIndex >= ellipses.length) break;
+    let xp = ellipses[zigZagIndex].x;
+    let yp = ellipses[zigZagIndex].y;
+
+    let offset = sign * randomGaussian(height / 5, 30); // randomGaussian(10, 50);
+
+    // Calculate tangent at the current point
+    let tangent = createVector(1, 0);
+    tangent.rotate(atan2(yp - ellipses[zigZagIndex - 1].y, xp - ellipses[zigZagIndex - 1].x));
+
+    // Calculate perpendicular vector
+    let perpendicular = createVector(-tangent.y, tangent.x);
+
+    // Normalize and apply offset
+    perpendicular.normalize();
+    perpendicular.mult(offset);
+
+    // Create zig-zag point
+    let zigZagPoint = createVector(xp, yp).add(perpendicular);
+    zigZagPoint.x = constrain(zigZagPoint.x, minX, maxX);
+    zigZagPoint.y = constrain(zigZagPoint.y, minY, maxY);
+
+    zigZagPoints.push(zigZagPoint);
+    zigZagIndex += floor(random(0.05, 0.2) * ellipses.length);
+    sign *= -1;
+  }
 }
 
 function draw() {
@@ -59,44 +95,21 @@ function draw() {
   noFill();
   strokeWeight(2);
   noiseDetail(1, 0.25);
-  beginShape();
-  let sign = 1;
-  let zigZagVal = floor(random(0.25) * ellipses.length);
   for (let i = 0; i < ellipses.length; i++) {
     let xp = ellipses[i].x;
     let yp = ellipses[i].y;
     let val = noise(0.001 * xp, 0.01 * yp);
-    let weight = map(val, 0, 1, 1, 30);
+    let weight = map(val, 0, 1, 2, 30);
     strokeWeight(weight);
     point(xp, yp);
-
-    if (i === zigZagVal) {
-      zigZagVal += floor(random(0.2) * ellipses.length);
-      let offset = sign * randomGaussian(75, 50);
-      sign *= -1;
-
-      // Calculate tangent at the current point
-      let tangent = createVector(1, 0);
-      tangent.rotate(atan2(yp - ellipses[i - 1].y, xp - ellipses[i - 1].x));
-
-      // Calculate perpendicular vector
-      let perpendicular = createVector(-tangent.y, tangent.x);
-
-      // Normalize and apply offset
-      perpendicular.normalize();
-      perpendicular.mult(offset);
-
-      // Create zig-zag point
-      let zigZagPoint = createVector(xp, yp).add(perpendicular);
-      zigZagPoint.x = constrain(zigZagPoint.x, minX, maxX);
-      zigZagPoint.y = constrain(zigZagPoint.y, minY, maxY);
-
-      vertex(zigZagPoint.x, zigZagPoint.y);
-    }
   }
+
+  beginShape();
   strokeWeight(1.5);
+  for (let zPoint of zigZagPoints) {
+    vertex(zPoint.x, zPoint.y);
+  }
   endShape();
-  pop();
 }
 
 // Function to get a point on the wavy bezier path given a parameter t
@@ -112,6 +125,18 @@ function getPointOnBezier(t, points) {
   }
 
   return createVector(x, y);
+}
+
+// Function to calculate the derivative of a cubic Bezier curve at a specific parameter t
+function getTangentOnBezier(t, points) {
+  let mt = 1 - t;
+  let mt2 = mt * mt;
+  let t2 = t * t;
+
+  let tangentX = -3 * mt2 * points[0].x + 3 * (mt2 - 2 * t * mt) * points[1].x + 3 * (2 * t * mt - t2) * points[2].x + 3 * t2 * points[3].x;
+  let tangentY = -3 * mt2 * points[0].y + 3 * (mt2 - 2 * t * mt) * points[1].y + 3 * (2 * t * mt - t2) * points[2].y + 3 * t2 * points[3].y;
+
+  return createVector(tangentX, tangentY).normalize();
 }
 
 // Bernstein basis function
